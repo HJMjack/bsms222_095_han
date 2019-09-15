@@ -1,0 +1,176 @@
+# 4.4 For-loops
+
+```{r}
+compute_s_n <- function(n){
+ x <- 1:n
+ sum(x)
+}
+```
+simplest loop
+
+```{r}
+for(i in 1:5){
+ print(i)
+}
+```
+Sn Example
+
+```{r}
+m <- 25
+s_n <- vector(length = m)
+for(n in 1:m){
+ s_n[n] <- compute_s_n(n)
+}
+```
+
+```{r}
+n <-1:m
+plot(n, s_n)
+```
+
+confirm with a table
+```{r}
+head(data.frame(s_n = s_n, formula = n*(n+1)/2))
+```
+
+```{r}
+plot(n, s_n)
+lines(n, n*(n+1)/2)
+```
+
+# 4.5 Vectorization and Functionals
+Vectorized function
+```{r}
+x <- 1:10
+sqrt(x)
+y <- 1:10
+x*y
+```
+
+```{r}
+n <- 1:25
+compute_s_n(n)
+```
+sapply permits us to perform element-wise operations on any function.
+```{r}
+x <- 1:10
+sapply(x, sqrt)
+```
+```{r}
+n <- 1:25
+s_n <- sapply(n, compute_s_n)
+plot(n, s_n)
+```
+
+# 4.6 Exercises
+
+1.
+What will this conditional expression return?
+```{r}
+x <- c(1,2,-3,4)
+
+if(all(x>0)){
+  print("all positives")
+} else{
+  print("Not all positives")
+}
+```
+A. Not all posictives.
+
+2.
+Which of the following expressions is always FALSE when at least one entry of a logical vector x is TRUE?
+```{r}
+x <- c(TRUE, FALSE, TRUE)
+all(x)
+any(x)
+any(!x)
+all(!x)
+```
+D.
+
+3.
+The function nchar tells you how many characters long a character vector is.
+Write a line of code that assigns to the object new_names the state abbreviation when the state name is longer than 8 characters.
+
+```{r}
+library(dslabs)
+data(murders)
+new_names <- ifelse(nchar(murders$state)>8, murders$abb, murders$state)
+new_names
+```
+
+4.
+Create a function sum_n that for any given value, say n, computes the sum of the integers from 1 to n (inclusive). Use the function to determine the sum of integers from 1 to 5,000.
+```{r}
+sum_n <- function(n){
+  x <- 1:n
+  sum(x)
+}
+sum_n(5000)
+```
+
+5.
+Create a function altman_plot that takes two arguments, x and y, and plots the difference against the sum.
+```{r}
+altman_plot <- function(x, y){
+  plot(x+y, y-x)
+}
+```
+
+6.
+After running the code below, what is the value of x?
+```{r}
+x <- 3
+my_func <- function(y){
+  x <- 5
+  y+5
+
+}
+x
+```
+3
+
+7.
+```{r}
+compute_s_n <-function(n){
+  x <- 1:n
+  sum(x*x)
+}
+compute_s_n(10)
+```
+385
+
+8. 
+```{r}
+s_n <- vector("numeric", 25)
+n <- 1:25
+for(i in n){
+  s_n[i] <- compute_s_n(i)
+}
+s_n
+```
+
+9.
+```{r}
+s_n <- sapply(n, compute_s_n)
+s_n
+```
+
+10.
+```{r}
+s_n <- map_dbl(n, compute_s_n)
+s_n
+```
+
+11.
+```{r}
+n <- 1:25
+plot(n, s_n)
+```
+
+12.
+```{r}
+n <- 1:25
+plot(n, s_n)
+lines(n, n*(n+1)*(2*n+1)/6)
+```
