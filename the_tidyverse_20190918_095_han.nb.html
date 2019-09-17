@@ -1748,22 +1748,172 @@ summary {
 </div>
 
 
-<!-- rnb-text-begin -->
-<p>This is an <a href="http://rmarkdown.rstudio.com">R Markdown</a> Notebook. When you execute code within the notebook, the results appear beneath the code.</p>
-<p>Try executing this chunk by clicking the <em>Run</em> button within the chunk or by placing your cursor inside it and pressing <em>Ctrl+Shift+Enter</em>.</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucGxvdChjYXJzKVxuYGBgIn0= -->
-<pre class="r"><code>plot(cars)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<p>Add a new chunk by clicking the <em>Insert Chunk</em> button on the toolbar or by pressing <em>Ctrl+Alt+I</em>.</p>
-<p>When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the <em>Preview</em> button or press <em>Ctrl+Shift+K</em> to preview the HTML file).</p>
-<p>The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike <em>Knit</em>, <em>Preview</em> does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.</p>
-<!-- rnb-text-end -->
+<p>Chapter 5 The tidyverse</p>
+<p>Once we start more advanced analyses, the preferred unit for data storage is not the vector but the data frame. In this chapter we learn to work directly with data frames, which greatly facilitate the organization of information.. We will be using data frames for the majority of this book. We will focus on a specific data format referred to as tidy and on specific collection of packages that are particularly helpful for working with tidy data referred to as the tidyverse.</p>
+<p>loading the Tidyverse package</p>
+<pre class="{r}"><code>install.packages(&quot;tidyverse&quot;)
+install.packages(&quot;dslabs&quot;)
+library(tidyverse)
+library(dslabs)</code></pre>
+<p><strong>dplyr</strong> package for manipulating data frames <strong>purrr</strong> package for working with functions <strong>ggplots</strong> graphing package <strong>readr</strong> package and so on…</p>
+<p>#5.1 Tidy data We say that a data table is in <strong>tidy format</strong> if each row represents one observation and columns represent the different variables available for each of these observations. The murders dataset is an example of a tidy data frame.</p>
+<pre class="{r}"><code>#&gt;        state abb region population total
+#&gt; 1    Alabama  AL  South    4779736   135
+#&gt; 2     Alaska  AK   West     710231    19
+#&gt; 3    Arizona  AZ   West    6392017   232
+#&gt; 4   Arkansas  AR  South    2915918    93
+#&gt; 5 California  CA   West   37253956  1257
+#&gt; 6   Colorado  CO   West    5029196    65</code></pre>
+<p>Different example of data frame : dslabs</p>
+<pre class="{r}"><code>#&gt;       country 1960 1961 1962 1963 1964 1965
+#&gt; 1     Germany 2.41 2.44 2.47 2.49 2.49 2.48
+#&gt; 2 South Korea 6.16 5.99 5.79 5.57 5.36 5.1</code></pre>
+<p>#5.2 Exercises 1. Examine the built-in dataset co2. Which of the following is true:</p>
+<pre class="{r}"><code>co2
+class(co2)</code></pre>
+<p>A. co2 is tidy data: it has one year for each row. there are several observations in one raw.</p>
+<p>B. co2 is not tidy: we need at least one column with a character vector. It doesn’t matter</p>
+<p><strong>C. co2 is not tidy: it is a matrix instead of a data frame.</strong> True</p>
+<p>D. co2 is not tidy: to be tidy we would have to wrangle it to have three columns (year, month and value), then each co2 observation would have a row. It doesn’t matter</p>
+<ol start="2" style="list-style-type: decimal">
+<li>Examine the built-in dataset ChickWeight. Which of the following is true:</li>
+</ol>
+<pre class="{r}"><code>ChickWeight
+class(ChickWeight)</code></pre>
+<p>A. ChickWeight is not tidy: each chick has more than one row.</p>
+<p>B. ChickWeight is tidy: each observation (a weight) is represented by one row. The chick from which this measurement came from is one the variables.</p>
+<p>C. ChickWeight is not a tidy: we are missing the year column.</p>
+<p><strong>D. ChickWeight is tidy: it is stored in a data frame.</strong></p>
+<ol start="3" style="list-style-type: decimal">
+<li>Examine the built-in dataset BOD. Which of the following is true:</li>
+</ol>
+<pre class="{r}"><code>BOD
+class(BOD)</code></pre>
+<p>A. BOD is not tidy: it only has six rows.</p>
+<p>B. BOD is not tidy: the first column is just an index.</p>
+<p><strong>C. BOD is tidy: each row is an observation with two values (time and demand)</strong></p>
+<p>D. BOD is tidy: all small datasets are tidy by definition.</p>
+<ol start="4" style="list-style-type: decimal">
+<li>Which of the following built-in datasets is tidy (you can pick more than one):</li>
+</ol>
+<pre class="{r}"><code>EuStockMarkets
+DNase
+Formaldehyde
+Orange</code></pre>
+<p>A. BJsales</p>
+<p><strong>B. EuStockMarkets</strong></p>
+<p><strong>C. DNase</strong></p>
+<p><strong>D. Formaldehyde</strong></p>
+<p><strong>E. Orange</strong></p>
+<p>F. UCBAdmissions</p>
+<p>#5.3 Manipulating data frames dplyr package introduces fuctions that perform some of the most common operations when working with data frames</p>
+<p>##5.3.1 Adding a column with <strong>mutate</strong> The function mutate takes the data frame as a first argument and the name and values of the variable as a second argument using the convention name = values mutate는 data frame에 data frame을 더하게 해준다.</p>
+<pre class="{r}"><code>library(dslabs)
+library(tidyverse)
+data(&quot;murders&quot;)
+murders &lt;- mutate(murders, rate = total / population * 10000)</code></pre>
+<p>mutate의 첫 부분은 data frame을, 뒷 부분은 value에 대한 식 등을 지정한다. murders에 기존 murders에 rate를 계산해서 더한 murders를 넣는다. 이 패키지의 function은 주어진 data frame에서 직접 변수를 찾으므로 위치를 지정해주지 않아도 된다.</p>
+<pre class="{r}"><code>head(murders)</code></pre>
+<div id="subsetting-with-filter" class="section level2">
+<h2>5.3.2 Subsetting with filter</h2>
+<p>원하는 데이터만 필터링 할 수 있게 해주는 function이다. 마찬가지로 앞 부분은 D.F.를, 뒷부분은 필터링할 변수의 조건을 설정한다.</p>
+<pre class="{r}"><code>filter(murders, rate &lt;= 0.71)</code></pre>
+<p>##5.3.3 Selecting columns with select D.F.의 원하는 부분만 골라서 볼 수 있게 해준다.</p>
+<pre class="{r}"><code>new_table &lt;- select(murders, state, region, rate)
+filter(new_table, rate &lt;= 0.71)</code></pre>
+<p>#5.4 Exercises</p>
+<pre class="{r}"><code>library(dplyr)
+library(dslabs)
+data(murders)</code></pre>
+<ol style="list-style-type: decimal">
+<li>You can add columns using the dplyr function mutate. This function is aware of the column names and inside the function you can call them unquoted:</li>
+</ol>
+<pre class="{r}"><code>murders &lt;- mutate(murders, population_in_millions = population / 10^6)</code></pre>
+<p>We can write <strong>population</strong> rather than murders$population. The function mutate knows we are grabbing columns from murders.</p>
+<p>Use the function mutate to add a murders column named rate with the per 100,000 murder rate as in the example code above. Make sure you redefine murders as done in the example code above ( murders &lt;- [your code]) so we can keep using this variable.</p>
+<pre class="{r}"><code>murders &lt;- mutate(murders, rate = total/population * 100000)
+murders</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>If rank(x) gives you the ranks of x from lowest to highest, rank(-x) gives you the ranks from highest to lowest. Use the function mutate to add a column rank containing the rank, from highest to lowest murder rate. Make sure you redefine murders so we can keep using this variable.</li>
+</ol>
+<pre class="{r}"><code>murders &lt;- mutate(murders, rank = rank(-rate))
+murders</code></pre>
+<ol start="3" style="list-style-type: decimal">
+<li>With dplyr, we can use select to show only certain columns. For example, with this code we would only show the states and population sizes:</li>
+</ol>
+<pre class="{r}"><code>select(murders, state, population) %&gt;% head()</code></pre>
+<p>Use select to show the state names and abbreviations in murders. Do not redefine murders, just show the results.</p>
+<pre class="{r}"><code>select(murders, state, abb) %&gt;% head()</code></pre>
+<p>head()는 앞쪽에 줄 번호를 추가해준다. 부가적인 기능.</p>
+<ol start="4" style="list-style-type: decimal">
+<li>The dplyr function filter is used to choose specific rows of the data frame to keep. Unlike select which is for columns, filter is for rows. For example, you can show just the New York row like this:</li>
+</ol>
+<pre class="{r}"><code>filter(murders, state == &quot;New York&quot;)</code></pre>
+<p>You can use other logical vectors to filter rows.</p>
+<p>Use filter to show the top 5 states with the highest murder rates. After we add murder rate and rank, do not change the murders dataset, just show the result. Remember that you can filter based on the rank column.</p>
+<pre class="{r}"><code>filter(murders, rank &lt;=5)</code></pre>
+<ol start="5" style="list-style-type: decimal">
+<li>We can remove rows using the != operator. For example, to remove Florida, we would do this:</li>
+</ol>
+<pre class="{r}"><code>no_florida &lt;- filter(murders, state != &quot;Florida&quot;)</code></pre>
+<p>Create a new data frame called no_south that removes states from the South region. How many states are in this category? You can use the function nrow for this. nrow : row의 수를 세어준다.</p>
+<pre class="{r}"><code>no_south &lt;- filter(murders, region!= &quot;South&quot;)
+nrow(no_south)</code></pre>
+<ol start="6" style="list-style-type: decimal">
+<li>We can also use %in% to filter with dplyr. You can therefore see the data from New York and Texas like this:</li>
+</ol>
+<pre class="{r}"><code>filter(murders, state %in% c(&quot;New York&quot;, &quot;Texas&quot;))</code></pre>
+<p>Create a new data frame called murders_nw with only the states from the Northeast and the West. How many states are in this category?</p>
+<pre class="{r}"><code>murders_nw &lt;- filter(murders, region %in% c(&quot;Northeast&quot;, &quot;West&quot;))
+nrow(murders_nw)</code></pre>
+<ol start="7" style="list-style-type: decimal">
+<li>Suppose you want to live in the Northeast or West and want the murder rate to be less than 1. We want to see the data for the states satisfying these options. Note that you can use logical operators with filter. Here is an example in which we filter to keep only small states in the Northeast region.</li>
+</ol>
+<pre class="{r}"><code>filter(murders, population &lt; 5000000 &amp; region == &quot;Northeast&quot;)</code></pre>
+<p>Make sure murders has been defined with rate and rank and still has all states. Create a table called my_states that contains rows for states satisfying both the conditions: it is in the Northeast or West and the murder rate is less than 1. Use select to show only the state name, the rate and the rank.</p>
+<pre class="{r}"><code>my_states &lt;- filter(murders, rate &lt; 1 &amp; region %in% c(&quot;Northeast&quot;, &quot;West&quot;))
+select(my_states, state, rate, rank)</code></pre>
+<p>#5.5 The pipe : %&gt;% dplyr를 통해 연속적인 operation을 수행할 수 있다. pipe operator <strong>%&gt;%</strong> 로 한 함수의 결과를 다른 함수로 보낼 수 있다.</p>
+<p>Example</p>
+<pre class="{r}"><code>murders %&gt;% select(state, region, rate) %&gt;% filter(rate &lt;= 0.71)</code></pre>
+<p>왼쪽의 결과를 오른쪽 함수의 첫 arqument가 되도록 보내준다. 첫 argument로 보내주므로 그 다음 argument부터 지정하면 된다.</p>
+<pre class="{r}"><code>16 %&gt;% sqrt() %&gt;% log2()
+#2
+16 %&gt;% sqrt() %&gt;% log(base = 2)
+#2</code></pre>
+<p>dplyr와 D.F.를 사용하는 경우 dplyr 함수는 Data를 첫 argument로 받는다. 따라서 적을 필요 없이 연속적으로 쓸 수 있다.</p>
+<pre class="{r}"><code>murders %&gt;% select(state, region, rate) %&gt;% filter(rate &lt;= 0.71)</code></pre>
+<p>pipe는 첫번째 argument가 input data일때 잘 움직인다.</p>
+<p>#5.6 Exercises 1. The pipe %&gt;% can be used to perform operations sequentially without having to define intermediate objects. Start by redefining murder to include rate and rank.</p>
+<pre class="{r}"><code>murders &lt;- mutate(murders, rate =  total / population * 100000, rank = rank(-rate))</code></pre>
+<p>In the solution to the previous exercise, we did the following:</p>
+<pre class="{r}"><code>my_states &lt;- filter(murders, region %in% c(&quot;Northeast&quot;, &quot;West&quot;) &amp; rate &lt; 1)
+select(my_states, state, rate, rank)</code></pre>
+<p>The pipe %&gt;% permits us to perform both operations sequentially without having to define an intermediate variable my_states. We therefore could have mutated and selected in the same line like this:</p>
+<pre class="{r}"><code>mutate(murders, rate =  total / population * 100000, rank = rank(-rate)) %&gt;%
+  select(state, rate, rank)</code></pre>
+<p>Notice that select no longer has a data frame as the first argument. The first argument is assumed to be the result of the operation conducted right before the %&gt;%.</p>
+<p>Repeat the previous exercise, but now instead of creating a new object, show the result and only include the state, rate, and rank columns. Use a pipe %&gt;% to do this in just one line. 5.</p>
+<pre class="{r}"><code>filter(murders, region!= &quot;South&quot;) %&gt;% nrow()
+#34</code></pre>
+<ol start="6" style="list-style-type: decimal">
+<li></li>
+</ol>
+<pre class="{r}"><code>filter(murders, region %in% c(&quot;Northeast&quot;, &quot;West&quot;)) %&gt;% nrow()</code></pre>
+<ol start="7" style="list-style-type: decimal">
+<li></li>
+</ol>
+<pre class="{r}"><code>filter(murders, rate &lt; 1 &amp; region %in% c(&quot;Northeast&quot;, &quot;West&quot;)) %&gt;% select(state, rate, rank)</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li>Reset murders to the original table by using data(murders).</li>
+</ol>
+<pre class="{r}"><code>data(murders)</code></pre>
+<p>Use a pipe to create a new data frame called my_states that considers only states in the Northeast or West which have a murder rate lower than 1, and contains only the state, rate and rank columns. The pipe should also have four components separated by three %&gt;%.</p>
+<pre class="{r}"><code>my_states &lt;- murders %&gt;% mutate(rate=total/population*10000, rank = rank(-rate)) %&gt;% filter(rate &lt; 1 &amp; region %in% c(&quot;Northeast&quot;, &quot;West&quot;)) %&gt;% select (state, rate, rank)
+my_states</code></pre>
+</div>
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiUiBOb3RlYm9vayIKb3V0cHV0OiBodG1sX25vdGVib29rCi0tLQoKVGhpcyBpcyBhbiBbUiBNYXJrZG93bl0oaHR0cDovL3JtYXJrZG93bi5yc3R1ZGlvLmNvbSkgTm90ZWJvb2suIFdoZW4geW91IGV4ZWN1dGUgY29kZSB3aXRoaW4gdGhlIG5vdGVib29rLCB0aGUgcmVzdWx0cyBhcHBlYXIgYmVuZWF0aCB0aGUgY29kZS4gCgpUcnkgZXhlY3V0aW5nIHRoaXMgY2h1bmsgYnkgY2xpY2tpbmcgdGhlICpSdW4qIGJ1dHRvbiB3aXRoaW4gdGhlIGNodW5rIG9yIGJ5IHBsYWNpbmcgeW91ciBjdXJzb3IgaW5zaWRlIGl0IGFuZCBwcmVzc2luZyAqQ3RybCtTaGlmdCtFbnRlciouIAoKYGBge3J9CnBsb3QoY2FycykKYGBgCgpBZGQgYSBuZXcgY2h1bmsgYnkgY2xpY2tpbmcgdGhlICpJbnNlcnQgQ2h1bmsqIGJ1dHRvbiBvbiB0aGUgdG9vbGJhciBvciBieSBwcmVzc2luZyAqQ3RybCtBbHQrSSouCgpXaGVuIHlvdSBzYXZlIHRoZSBub3RlYm9vaywgYW4gSFRNTCBmaWxlIGNvbnRhaW5pbmcgdGhlIGNvZGUgYW5kIG91dHB1dCB3aWxsIGJlIHNhdmVkIGFsb25nc2lkZSBpdCAoY2xpY2sgdGhlICpQcmV2aWV3KiBidXR0b24gb3IgcHJlc3MgKkN0cmwrU2hpZnQrSyogdG8gcHJldmlldyB0aGUgSFRNTCBmaWxlKS4KClRoZSBwcmV2aWV3IHNob3dzIHlvdSBhIHJlbmRlcmVkIEhUTUwgY29weSBvZiB0aGUgY29udGVudHMgb2YgdGhlIGVkaXRvci4gQ29uc2VxdWVudGx5LCB1bmxpa2UgKktuaXQqLCAqUHJldmlldyogZG9lcyBub3QgcnVuIGFueSBSIGNvZGUgY2h1bmtzLiBJbnN0ZWFkLCB0aGUgb3V0cHV0IG9mIHRoZSBjaHVuayB3aGVuIGl0IHdhcyBsYXN0IHJ1biBpbiB0aGUgZWRpdG9yIGlzIGRpc3BsYXllZC4K</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiUiBOb3RlYm9vayIKb3V0cHV0OiBodG1sX25vdGVib29rCi0tLQpDaGFwdGVyIDUgVGhlIHRpZHl2ZXJzZQoKT25jZSB3ZSBzdGFydCBtb3JlIGFkdmFuY2VkIGFuYWx5c2VzLCB0aGUgcHJlZmVycmVkIHVuaXQgZm9yIGRhdGEgc3RvcmFnZSBpcyBub3QgdGhlIHZlY3RvciBidXQgdGhlIGRhdGEgZnJhbWUuIEluIHRoaXMgY2hhcHRlciB3ZSBsZWFybiB0byB3b3JrIGRpcmVjdGx5IHdpdGggZGF0YSBmcmFtZXMsIHdoaWNoIGdyZWF0bHkgZmFjaWxpdGF0ZSB0aGUgb3JnYW5pemF0aW9uIG9mIGluZm9ybWF0aW9uLi4gV2Ugd2lsbCBiZSB1c2luZyBkYXRhIGZyYW1lcyBmb3IgdGhlIG1ham9yaXR5IG9mIHRoaXMgYm9vay4gV2Ugd2lsbCBmb2N1cyBvbiBhIHNwZWNpZmljIGRhdGEgZm9ybWF0IHJlZmVycmVkIHRvIGFzIHRpZHkgYW5kIG9uIHNwZWNpZmljIGNvbGxlY3Rpb24gb2YgcGFja2FnZXMgdGhhdCBhcmUgcGFydGljdWxhcmx5IGhlbHBmdWwgZm9yIHdvcmtpbmcgd2l0aCB0aWR5IGRhdGEgcmVmZXJyZWQgdG8gYXMgdGhlIHRpZHl2ZXJzZS4KCmxvYWRpbmcgdGhlIFRpZHl2ZXJzZSBwYWNrYWdlCmBgYHtyfQppbnN0YWxsLnBhY2thZ2VzKCJ0aWR5dmVyc2UiKQppbnN0YWxsLnBhY2thZ2VzKCJkc2xhYnMiKQpsaWJyYXJ5KHRpZHl2ZXJzZSkKbGlicmFyeShkc2xhYnMpCmBgYAoKKipkcGx5cioqIHBhY2thZ2UgZm9yIG1hbmlwdWxhdGluZyBkYXRhIGZyYW1lcwoqKnB1cnJyKiogcGFja2FnZSBmb3Igd29ya2luZyB3aXRoIGZ1bmN0aW9ucwoqKmdncGxvdHMqKiBncmFwaGluZyBwYWNrYWdlCioqcmVhZHIqKiBwYWNrYWdlIGFuZCBzbyBvbi4uLgoKIzUuMSBUaWR5IGRhdGEKV2Ugc2F5IHRoYXQgYSBkYXRhIHRhYmxlIGlzIGluIF9fdGlkeSBmb3JtYXRfXyBpZiBlYWNoIHJvdyByZXByZXNlbnRzIG9uZSBvYnNlcnZhdGlvbiBhbmQgY29sdW1ucyByZXByZXNlbnQgdGhlIGRpZmZlcmVudCB2YXJpYWJsZXMgYXZhaWxhYmxlIGZvciBlYWNoIG9mIHRoZXNlIG9ic2VydmF0aW9ucy4gVGhlIG11cmRlcnMgZGF0YXNldCBpcyBhbiBleGFtcGxlIG9mIGEgdGlkeSBkYXRhIGZyYW1lLgpgYGB7cn0KIz4gICAgICAgIHN0YXRlIGFiYiByZWdpb24gcG9wdWxhdGlvbiB0b3RhbAojPiAxICAgIEFsYWJhbWEgIEFMICBTb3V0aCAgICA0Nzc5NzM2ICAgMTM1CiM+IDIgICAgIEFsYXNrYSAgQUsgICBXZXN0ICAgICA3MTAyMzEgICAgMTkKIz4gMyAgICBBcml6b25hICBBWiAgIFdlc3QgICAgNjM5MjAxNyAgIDIzMgojPiA0ICAgQXJrYW5zYXMgIEFSICBTb3V0aCAgICAyOTE1OTE4ICAgIDkzCiM+IDUgQ2FsaWZvcm5pYSAgQ0EgICBXZXN0ICAgMzcyNTM5NTYgIDEyNTcKIz4gNiAgIENvbG9yYWRvICBDTyAgIFdlc3QgICAgNTAyOTE5NiAgICA2NQpgYGAKCkRpZmZlcmVudCBleGFtcGxlIG9mIGRhdGEgZnJhbWUgOiBkc2xhYnMKYGBge3J9CiM+ICAgICAgIGNvdW50cnkgMTk2MCAxOTYxIDE5NjIgMTk2MyAxOTY0IDE5NjUKIz4gMSAgICAgR2VybWFueSAyLjQxIDIuNDQgMi40NyAyLjQ5IDIuNDkgMi40OAojPiAyIFNvdXRoIEtvcmVhIDYuMTYgNS45OSA1Ljc5IDUuNTcgNS4zNiA1LjEKYGBgCgojNS4yIEV4ZXJjaXNlcwoxLiBFeGFtaW5lIHRoZSBidWlsdC1pbiBkYXRhc2V0IGNvMi4gV2hpY2ggb2YgdGhlIGZvbGxvd2luZyBpcyB0cnVlOgpgYGB7cn0KY28yCmNsYXNzKGNvMikKYGBgCgpBLiBjbzIgaXMgdGlkeSBkYXRhOiBpdCBoYXMgb25lIHllYXIgZm9yIGVhY2ggcm93LgogIHRoZXJlIGFyZSBzZXZlcmFsIG9ic2VydmF0aW9ucyBpbiBvbmUgcmF3LgoKQi4gY28yIGlzIG5vdCB0aWR5OiB3ZSBuZWVkIGF0IGxlYXN0IG9uZSBjb2x1bW4gd2l0aCBhIGNoYXJhY3RlciB2ZWN0b3IuCiAgSXQgZG9lc24ndCBtYXR0ZXIKCioqQy4gY28yIGlzIG5vdCB0aWR5OiBpdCBpcyBhIG1hdHJpeCBpbnN0ZWFkIG9mIGEgZGF0YSBmcmFtZS4qKgogIFRydWUKCkQuIGNvMiBpcyBub3QgdGlkeTogdG8gYmUgdGlkeSB3ZSB3b3VsZCBoYXZlIHRvIHdyYW5nbGUgaXQgdG8gaGF2ZSB0aHJlZSBjb2x1bW5zICh5ZWFyLCBtb250aCBhbmQgdmFsdWUpLCB0aGVuIGVhY2ggY28yIG9ic2VydmF0aW9uIHdvdWxkIGhhdmUgYSByb3cuCiAgSXQgZG9lc24ndCBtYXR0ZXIKICAKCjIuIEV4YW1pbmUgdGhlIGJ1aWx0LWluIGRhdGFzZXQgQ2hpY2tXZWlnaHQuIFdoaWNoIG9mIHRoZSBmb2xsb3dpbmcgaXMgdHJ1ZToKYGBge3J9CkNoaWNrV2VpZ2h0CmNsYXNzKENoaWNrV2VpZ2h0KQpgYGAKCkEuIENoaWNrV2VpZ2h0IGlzIG5vdCB0aWR5OiBlYWNoIGNoaWNrIGhhcyBtb3JlIHRoYW4gb25lIHJvdy4KCkIuIENoaWNrV2VpZ2h0IGlzIHRpZHk6IGVhY2ggb2JzZXJ2YXRpb24gKGEgd2VpZ2h0KSBpcyByZXByZXNlbnRlZCBieSBvbmUgcm93LiBUaGUgY2hpY2sgZnJvbSB3aGljaCB0aGlzIG1lYXN1cmVtZW50IGNhbWUgZnJvbSBpcyBvbmUgdGhlIHZhcmlhYmxlcy4KCkMuIENoaWNrV2VpZ2h0IGlzIG5vdCBhIHRpZHk6IHdlIGFyZSBtaXNzaW5nIHRoZSB5ZWFyIGNvbHVtbi4KCioqRC4gQ2hpY2tXZWlnaHQgaXMgdGlkeTogaXQgaXMgc3RvcmVkIGluIGEgZGF0YSBmcmFtZS4qKgoKMy4gRXhhbWluZSB0aGUgYnVpbHQtaW4gZGF0YXNldCBCT0QuIFdoaWNoIG9mIHRoZSBmb2xsb3dpbmcgaXMgdHJ1ZToKYGBge3J9CkJPRApjbGFzcyhCT0QpCmBgYAoKQS4gQk9EIGlzIG5vdCB0aWR5OiBpdCBvbmx5IGhhcyBzaXggcm93cy4KCkIuIEJPRCBpcyBub3QgdGlkeTogdGhlIGZpcnN0IGNvbHVtbiBpcyBqdXN0IGFuIGluZGV4LgoKKipDLiBCT0QgaXMgdGlkeTogZWFjaCByb3cgaXMgYW4gb2JzZXJ2YXRpb24gd2l0aCB0d28gdmFsdWVzICh0aW1lIGFuZCBkZW1hbmQpKioKCkQuIEJPRCBpcyB0aWR5OiBhbGwgc21hbGwgZGF0YXNldHMgYXJlIHRpZHkgYnkgZGVmaW5pdGlvbi4KCjQuIFdoaWNoIG9mIHRoZSBmb2xsb3dpbmcgYnVpbHQtaW4gZGF0YXNldHMgaXMgdGlkeSAoeW91IGNhbiBwaWNrIG1vcmUgdGhhbiBvbmUpOgpgYGB7cn0KRXVTdG9ja01hcmtldHMKRE5hc2UKRm9ybWFsZGVoeWRlCk9yYW5nZQpgYGAKCkEuIEJKc2FsZXMKCioqQi4gRXVTdG9ja01hcmtldHMqKgoKKipDLiBETmFzZSoqCgoqKkQuIEZvcm1hbGRlaHlkZSoqCgoqKkUuIE9yYW5nZSoqCgpGLiBVQ0JBZG1pc3Npb25zCgojNS4zIE1hbmlwdWxhdGluZyBkYXRhIGZyYW1lcwogZHBseXIgcGFja2FnZSBpbnRyb2R1Y2VzIGZ1Y3Rpb25zIHRoYXQgcGVyZm9ybSBzb21lIG9mIHRoZSBtb3N0IGNvbW1vbiBvcGVyYXRpb25zIHdoZW4gd29ya2luZyB3aXRoIGRhdGEgZnJhbWVzCiAKIyM1LjMuMSBBZGRpbmcgYSBjb2x1bW4gd2l0aCBfX211dGF0ZV9fClRoZSBmdW5jdGlvbiBtdXRhdGUgdGFrZXMgdGhlIGRhdGEgZnJhbWUgYXMgYSBmaXJzdCBhcmd1bWVudCBhbmQgdGhlIG5hbWUgYW5kIHZhbHVlcyBvZiB0aGUgdmFyaWFibGUgYXMgYSBzZWNvbmQgYXJndW1lbnQgdXNpbmcgdGhlIGNvbnZlbnRpb24gbmFtZSA9IHZhbHVlcwptdXRhdGXripQgZGF0YSBmcmFtZeyXkCBkYXRhIGZyYW1l7J2EIOuNlO2VmOqyjCDtlbTspIDri6QuCgpgYGB7cn0KbGlicmFyeShkc2xhYnMpCmxpYnJhcnkodGlkeXZlcnNlKQpkYXRhKCJtdXJkZXJzIikKbXVyZGVycyA8LSBtdXRhdGUobXVyZGVycywgcmF0ZSA9IHRvdGFsIC8gcG9wdWxhdGlvbiAqIDEwMDAwKQpgYGAKbXV0YXRl7J2YIOyyqyDrtoDrtoTsnYAgZGF0YSBmcmFtZeydhCwg65K3IOu2gOu2hOydgCB2YWx1ZeyXkCDrjIDtlZwg7IudIOuTseydhCDsp4DsoJXtlZzri6QuCm11cmRlcnPsl5Ag6riw7KG0IG11cmRlcnPsl5AgcmF0ZeulvCDqs4TsgrDtlbTshJwg642U7ZWcIG11cmRlcnPrpbwg64Sj64qU64ukLgrsnbQg7Yyo7YKk7KeA7J2YIGZ1bmN0aW9u7J2AIOyjvOyWtOynhCBkYXRhIGZyYW1l7JeQ7IScIOyngeygkSDrs4DsiJjrpbwg7LC+7Jy866+A66GcIOychOy5mOulvCDsp4DsoJXtlbTso7zsp4Ag7JWK7JWE64+EIOuQnOuLpC4KCmBgYHtyfQpoZWFkKG11cmRlcnMpCmBgYAoKIyMgNS4zLjIgU3Vic2V0dGluZyB3aXRoIGZpbHRlcgrsm5DtlZjripQg642w7J207YSw66eMIO2VhO2EsOungSDtlaAg7IiYIOyeiOqyjCDtlbTso7zripQgZnVuY3Rpb27snbTri6QuIOuniOywrOqwgOyngOuhnCDslZ4g67aA67aE7J2AIEQuRi7rpbwsIOuSt+u2gOu2hOydgCDtlYTthLDrp4HtlaAg67OA7IiY7J2YIOyhsOqxtOydhCDshKTsoJXtlZzri6QuCgpgYGB7cn0KZmlsdGVyKG11cmRlcnMsIHJhdGUgPD0gMC43MSkKYGBgCgojIzUuMy4zIFNlbGVjdGluZyBjb2x1bW5zIHdpdGggc2VsZWN0CkQuRi7snZgg7JuQ7ZWY64qUIOu2gOu2hOunjCDqs6jrnbzshJwg67O8IOyImCDsnojqsowg7ZW07KSA64ukLgpgYGB7cn0KbmV3X3RhYmxlIDwtIHNlbGVjdChtdXJkZXJzLCBzdGF0ZSwgcmVnaW9uLCByYXRlKQpmaWx0ZXIobmV3X3RhYmxlLCByYXRlIDw9IDAuNzEpCmBgYAoKIzUuNCBFeGVyY2lzZXMKYGBge3J9CmxpYnJhcnkoZHBseXIpCmxpYnJhcnkoZHNsYWJzKQpkYXRhKG11cmRlcnMpCmBgYAoKMS4gWW91IGNhbiBhZGQgY29sdW1ucyB1c2luZyB0aGUgZHBseXIgZnVuY3Rpb24gbXV0YXRlLiBUaGlzIGZ1bmN0aW9uIGlzIGF3YXJlIG9mIHRoZSBjb2x1bW4gbmFtZXMgYW5kIGluc2lkZSB0aGUgZnVuY3Rpb24geW91IGNhbiBjYWxsIHRoZW0gdW5xdW90ZWQ6CgpgYGB7cn0KbXVyZGVycyA8LSBtdXRhdGUobXVyZGVycywgcG9wdWxhdGlvbl9pbl9taWxsaW9ucyA9IHBvcHVsYXRpb24gLyAxMF42KQpgYGAKCldlIGNhbiB3cml0ZSBfX3BvcHVsYXRpb25fXyByYXRoZXIgdGhhbiBtdXJkZXJzJHBvcHVsYXRpb24uIFRoZSBmdW5jdGlvbiBtdXRhdGUga25vd3Mgd2UgYXJlIGdyYWJiaW5nIGNvbHVtbnMgZnJvbSBtdXJkZXJzLgoKVXNlIHRoZSBmdW5jdGlvbiBtdXRhdGUgdG8gYWRkIGEgbXVyZGVycyBjb2x1bW4gbmFtZWQgcmF0ZSB3aXRoIHRoZSBwZXIgMTAwLDAwMCBtdXJkZXIgcmF0ZSBhcyBpbiB0aGUgZXhhbXBsZSBjb2RlIGFib3ZlLiBNYWtlIHN1cmUgeW91IHJlZGVmaW5lIG11cmRlcnMgYXMgZG9uZSBpbiB0aGUgZXhhbXBsZSBjb2RlIGFib3ZlICggbXVyZGVycyA8LSBbeW91ciBjb2RlXSkgc28gd2UgY2FuIGtlZXAgdXNpbmcgdGhpcyB2YXJpYWJsZS4KYGBge3J9Cm11cmRlcnMgPC0gbXV0YXRlKG11cmRlcnMsIHJhdGUgPSB0b3RhbC9wb3B1bGF0aW9uICogMTAwMDAwKQptdXJkZXJzCmBgYAoKMi4gSWYgcmFuayh4KSBnaXZlcyB5b3UgdGhlIHJhbmtzIG9mIHggZnJvbSBsb3dlc3QgdG8gaGlnaGVzdCwgcmFuaygteCkgZ2l2ZXMgeW91IHRoZSByYW5rcyBmcm9tIGhpZ2hlc3QgdG8gbG93ZXN0LiBVc2UgdGhlIGZ1bmN0aW9uIG11dGF0ZSB0byBhZGQgYSBjb2x1bW4gcmFuayBjb250YWluaW5nIHRoZSByYW5rLCBmcm9tIGhpZ2hlc3QgdG8gbG93ZXN0IG11cmRlciByYXRlLiBNYWtlIHN1cmUgeW91IHJlZGVmaW5lIG11cmRlcnMgc28gd2UgY2FuIGtlZXAgdXNpbmcgdGhpcyB2YXJpYWJsZS4KYGBge1J9Cm11cmRlcnMgPC0gbXV0YXRlKG11cmRlcnMsIHJhbmsgPSByYW5rKC1yYXRlKSkKbXVyZGVycwpgYGAKCjMuIFdpdGggZHBseXIsIHdlIGNhbiB1c2Ugc2VsZWN0IHRvIHNob3cgb25seSBjZXJ0YWluIGNvbHVtbnMuIEZvciBleGFtcGxlLCB3aXRoIHRoaXMgY29kZSB3ZSB3b3VsZCBvbmx5IHNob3cgdGhlIHN0YXRlcyBhbmQgcG9wdWxhdGlvbiBzaXplczoKYGBge3J9CnNlbGVjdChtdXJkZXJzLCBzdGF0ZSwgcG9wdWxhdGlvbikgJT4lIGhlYWQoKQpgYGAKVXNlIHNlbGVjdCB0byBzaG93IHRoZSBzdGF0ZSBuYW1lcyBhbmQgYWJicmV2aWF0aW9ucyBpbiBtdXJkZXJzLiBEbyBub3QgcmVkZWZpbmUgbXVyZGVycywganVzdCBzaG93IHRoZSByZXN1bHRzLgpgYGB7cn0Kc2VsZWN0KG11cmRlcnMsIHN0YXRlLCBhYmIpICU+JSBoZWFkKCkKYGBgCmhlYWQoKeuKlCDslZ7sqr3sl5Ag7KSEIOuyiO2YuOulvCDstpTqsIDtlbTspIDri6QuIOu2gOqwgOyggeyduCDquLDriqUuCgo0LiBUaGUgZHBseXIgZnVuY3Rpb24gZmlsdGVyIGlzIHVzZWQgdG8gY2hvb3NlIHNwZWNpZmljIHJvd3Mgb2YgdGhlIGRhdGEgZnJhbWUgdG8ga2VlcC4gVW5saWtlIHNlbGVjdCB3aGljaCBpcyBmb3IgY29sdW1ucywgZmlsdGVyIGlzIGZvciByb3dzLiBGb3IgZXhhbXBsZSwgeW91IGNhbiBzaG93IGp1c3QgdGhlIE5ldyBZb3JrIHJvdyBsaWtlIHRoaXM6CmBgYHtyfQpmaWx0ZXIobXVyZGVycywgc3RhdGUgPT0gIk5ldyBZb3JrIikKYGBgCllvdSBjYW4gdXNlIG90aGVyIGxvZ2ljYWwgdmVjdG9ycyB0byBmaWx0ZXIgcm93cy4KClVzZSBmaWx0ZXIgdG8gc2hvdyB0aGUgdG9wIDUgc3RhdGVzIHdpdGggdGhlIGhpZ2hlc3QgbXVyZGVyIHJhdGVzLiBBZnRlciB3ZSBhZGQgbXVyZGVyIHJhdGUgYW5kIHJhbmssIGRvIG5vdCBjaGFuZ2UgdGhlIG11cmRlcnMgZGF0YXNldCwganVzdCBzaG93IHRoZSByZXN1bHQuIFJlbWVtYmVyIHRoYXQgeW91IGNhbiBmaWx0ZXIgYmFzZWQgb24gdGhlIHJhbmsgY29sdW1uLgpgYGB7cn0KZmlsdGVyKG11cmRlcnMsIHJhbmsgPD01KQpgYGAKCjUuIFdlIGNhbiByZW1vdmUgcm93cyB1c2luZyB0aGUgIT0gb3BlcmF0b3IuIEZvciBleGFtcGxlLCB0byByZW1vdmUgRmxvcmlkYSwgd2Ugd291bGQgZG8gdGhpczoKYGBge3J9Cm5vX2Zsb3JpZGEgPC0gZmlsdGVyKG11cmRlcnMsIHN0YXRlICE9ICJGbG9yaWRhIikKYGBgCkNyZWF0ZSBhIG5ldyBkYXRhIGZyYW1lIGNhbGxlZCBub19zb3V0aCB0aGF0IHJlbW92ZXMgc3RhdGVzIGZyb20gdGhlIFNvdXRoIHJlZ2lvbi4gSG93IG1hbnkgc3RhdGVzIGFyZSBpbiB0aGlzIGNhdGVnb3J5PyBZb3UgY2FuIHVzZSB0aGUgZnVuY3Rpb24gbnJvdyBmb3IgdGhpcy4KbnJvdyA6IHJvd+ydmCDsiJjrpbwg7IS47Ja07KSA64ukLgpgYGB7cn0Kbm9fc291dGggPC0gZmlsdGVyKG11cmRlcnMsIHJlZ2lvbiE9ICJTb3V0aCIpCm5yb3cobm9fc291dGgpCmBgYAoKNi4gV2UgY2FuIGFsc28gdXNlICVpbiUgdG8gZmlsdGVyIHdpdGggZHBseXIuIFlvdSBjYW4gdGhlcmVmb3JlIHNlZSB0aGUgZGF0YSBmcm9tIE5ldyBZb3JrIGFuZCBUZXhhcyBsaWtlIHRoaXM6CmBgYHtyfQpmaWx0ZXIobXVyZGVycywgc3RhdGUgJWluJSBjKCJOZXcgWW9yayIsICJUZXhhcyIpKQpgYGAKCkNyZWF0ZSBhIG5ldyBkYXRhIGZyYW1lIGNhbGxlZCBtdXJkZXJzX253IHdpdGggb25seSB0aGUgc3RhdGVzIGZyb20gdGhlIE5vcnRoZWFzdCBhbmQgdGhlIFdlc3QuIEhvdyBtYW55IHN0YXRlcyBhcmUgaW4gdGhpcyBjYXRlZ29yeT8KYGBge3J9Cm11cmRlcnNfbncgPC0gZmlsdGVyKG11cmRlcnMsIHJlZ2lvbiAlaW4lIGMoIk5vcnRoZWFzdCIsICJXZXN0IikpCm5yb3cobXVyZGVyc19udykKYGBgCgo3LiBTdXBwb3NlIHlvdSB3YW50IHRvIGxpdmUgaW4gdGhlIE5vcnRoZWFzdCBvciBXZXN0IGFuZCB3YW50IHRoZSBtdXJkZXIgcmF0ZSB0byBiZSBsZXNzIHRoYW4gMS4gV2Ugd2FudCB0byBzZWUgdGhlIGRhdGEgZm9yIHRoZSBzdGF0ZXMgc2F0aXNmeWluZyB0aGVzZSBvcHRpb25zLiBOb3RlIHRoYXQgeW91IGNhbiB1c2UgbG9naWNhbCBvcGVyYXRvcnMgd2l0aCBmaWx0ZXIuIEhlcmUgaXMgYW4gZXhhbXBsZSBpbiB3aGljaCB3ZSBmaWx0ZXIgdG8ga2VlcCBvbmx5IHNtYWxsIHN0YXRlcyBpbiB0aGUgTm9ydGhlYXN0IHJlZ2lvbi4KYGBge3J9CmZpbHRlcihtdXJkZXJzLCBwb3B1bGF0aW9uIDwgNTAwMDAwMCAmIHJlZ2lvbiA9PSAiTm9ydGhlYXN0IikKYGBgCk1ha2Ugc3VyZSBtdXJkZXJzIGhhcyBiZWVuIGRlZmluZWQgd2l0aCByYXRlIGFuZCByYW5rIGFuZCBzdGlsbCBoYXMgYWxsIHN0YXRlcy4gQ3JlYXRlIGEgdGFibGUgY2FsbGVkIG15X3N0YXRlcyB0aGF0IGNvbnRhaW5zIHJvd3MgZm9yIHN0YXRlcyBzYXRpc2Z5aW5nIGJvdGggdGhlIGNvbmRpdGlvbnM6IGl0IGlzIGluIHRoZSBOb3J0aGVhc3Qgb3IgV2VzdCBhbmQgdGhlIG11cmRlciByYXRlIGlzIGxlc3MgdGhhbiAxLiBVc2Ugc2VsZWN0IHRvIHNob3cgb25seSB0aGUgc3RhdGUgbmFtZSwgdGhlIHJhdGUgYW5kIHRoZSByYW5rLgpgYGB7cn0KbXlfc3RhdGVzIDwtIGZpbHRlcihtdXJkZXJzLCByYXRlIDwgMSAmIHJlZ2lvbiAlaW4lIGMoIk5vcnRoZWFzdCIsICJXZXN0IikpCnNlbGVjdChteV9zdGF0ZXMsIHN0YXRlLCByYXRlLCByYW5rKQpgYGAKCiM1LjUgVGhlIHBpcGUgOiAlPiUKZHBseXLrpbwg7Ya17ZW0IOyXsOyGjeyggeyduCBvcGVyYXRpb27snYQg7IiY7ZaJ7ZWgIOyImCDsnojri6QuCnBpcGUgb3BlcmF0b3IgX18lPiVfXyDroZwg7ZWcIO2VqOyImOydmCDqsrDqs7zrpbwg64uk66W4IO2VqOyImOuhnCDrs7Trgrwg7IiYIOyeiOuLpC4KCkV4YW1wbGUKYGBge3J9Cm11cmRlcnMgJT4lIHNlbGVjdChzdGF0ZSwgcmVnaW9uLCByYXRlKSAlPiUgZmlsdGVyKHJhdGUgPD0gMC43MSkKYGBgCuyZvOyqveydmCDqsrDqs7zrpbwg7Jik66W47Kq9IO2VqOyImOydmCDssqsgYXJxdW1lbnTqsIAg65CY64+E66GdIOuztOuCtOykgOuLpC4K7LKrIGFyZ3VtZW5066GcIOuztOuCtOyjvOuvgOuhnCDqt7gg64uk7J2MIGFyZ3VtZW5067aA7YSwIOyngOygle2VmOuptCDrkJzri6QuCgpgYGB7Un0KMTYgJT4lIHNxcnQoKSAlPiUgbG9nMigpCiMyCjE2ICU+JSBzcXJ0KCkgJT4lIGxvZyhiYXNlID0gMikKIzIKYGBgCgpkcGx5cuyZgCBELkYu66W8IOyCrOyaqe2VmOuKlCDqsr3smrAgZHBseXIg7ZWo7IiY64qUIERhdGHrpbwg7LKrIGFyZ3VtZW5066GcIOuwm+uKlOuLpC4g65Sw65287IScIOyggeydhCDtlYTsmpQg7JeG7J20IOyXsOyGjeyggeycvOuhnCDsk7gg7IiYIOyeiOuLpC4KYGBge3J9Cm11cmRlcnMgJT4lIHNlbGVjdChzdGF0ZSwgcmVnaW9uLCByYXRlKSAlPiUgZmlsdGVyKHJhdGUgPD0gMC43MSkKYGBgCnBpcGXripQg7LKr67KI7Ke4IGFyZ3VtZW506rCAIGlucHV0IGRhdGHsnbzrlYwg7J6YIOybgOyngeyduOuLpC4KCiM1LjYgRXhlcmNpc2VzCjEuIFRoZSBwaXBlICU+JSBjYW4gYmUgdXNlZCB0byBwZXJmb3JtIG9wZXJhdGlvbnMgc2VxdWVudGlhbGx5IHdpdGhvdXQgaGF2aW5nIHRvIGRlZmluZSBpbnRlcm1lZGlhdGUgb2JqZWN0cy4gU3RhcnQgYnkgcmVkZWZpbmluZyBtdXJkZXIgdG8gaW5jbHVkZSByYXRlIGFuZCByYW5rLgpgYGB7cn0KbXVyZGVycyA8LSBtdXRhdGUobXVyZGVycywgcmF0ZSA9ICB0b3RhbCAvIHBvcHVsYXRpb24gKiAxMDAwMDAsIHJhbmsgPSByYW5rKC1yYXRlKSkKYGBgCgpJbiB0aGUgc29sdXRpb24gdG8gdGhlIHByZXZpb3VzIGV4ZXJjaXNlLCB3ZSBkaWQgdGhlIGZvbGxvd2luZzoKYGBge3J9Cm15X3N0YXRlcyA8LSBmaWx0ZXIobXVyZGVycywgcmVnaW9uICVpbiUgYygiTm9ydGhlYXN0IiwgIldlc3QiKSAmIHJhdGUgPCAxKQpzZWxlY3QobXlfc3RhdGVzLCBzdGF0ZSwgcmF0ZSwgcmFuaykKYGBgCgpUaGUgcGlwZSAlPiUgcGVybWl0cyB1cyB0byBwZXJmb3JtIGJvdGggb3BlcmF0aW9ucyBzZXF1ZW50aWFsbHkgd2l0aG91dCBoYXZpbmcgdG8gZGVmaW5lIGFuIGludGVybWVkaWF0ZSB2YXJpYWJsZSBteV9zdGF0ZXMuIFdlIHRoZXJlZm9yZSBjb3VsZCBoYXZlIG11dGF0ZWQgYW5kIHNlbGVjdGVkIGluIHRoZSBzYW1lIGxpbmUgbGlrZSB0aGlzOgoKYGBge3J9Cm11dGF0ZShtdXJkZXJzLCByYXRlID0gIHRvdGFsIC8gcG9wdWxhdGlvbiAqIDEwMDAwMCwgcmFuayA9IHJhbmsoLXJhdGUpKSAlPiUKICBzZWxlY3Qoc3RhdGUsIHJhdGUsIHJhbmspCmBgYAoKTm90aWNlIHRoYXQgc2VsZWN0IG5vIGxvbmdlciBoYXMgYSBkYXRhIGZyYW1lIGFzIHRoZSBmaXJzdCBhcmd1bWVudC4gVGhlIGZpcnN0IGFyZ3VtZW50IGlzIGFzc3VtZWQgdG8gYmUgdGhlIHJlc3VsdCBvZiB0aGUgb3BlcmF0aW9uIGNvbmR1Y3RlZCByaWdodCBiZWZvcmUgdGhlICU+JS4KClJlcGVhdCB0aGUgcHJldmlvdXMgZXhlcmNpc2UsIGJ1dCBub3cgaW5zdGVhZCBvZiBjcmVhdGluZyBhIG5ldyBvYmplY3QsIHNob3cgdGhlIHJlc3VsdCBhbmQgb25seSBpbmNsdWRlIHRoZSBzdGF0ZSwgcmF0ZSwgYW5kIHJhbmsgY29sdW1ucy4gVXNlIGEgcGlwZSAlPiUgdG8gZG8gdGhpcyBpbiBqdXN0IG9uZSBsaW5lLgo1LgpgYGB7cn0KZmlsdGVyKG11cmRlcnMsIHJlZ2lvbiE9ICJTb3V0aCIpICU+JSBucm93KCkKIzM0CmBgYAo2LgpgYGB7cn0KZmlsdGVyKG11cmRlcnMsIHJlZ2lvbiAlaW4lIGMoIk5vcnRoZWFzdCIsICJXZXN0IikpICU+JSBucm93KCkKYGBgCgo3LiAKYGBge3J9CmZpbHRlcihtdXJkZXJzLCByYXRlIDwgMSAmIHJlZ2lvbiAlaW4lIGMoIk5vcnRoZWFzdCIsICJXZXN0IikpICU+JSBzZWxlY3Qoc3RhdGUsIHJhdGUsIHJhbmspCmBgYAoKCjIuIFJlc2V0IG11cmRlcnMgdG8gdGhlIG9yaWdpbmFsIHRhYmxlIGJ5IHVzaW5nIGRhdGEobXVyZGVycykuIApgYGB7cn0KZGF0YShtdXJkZXJzKQpgYGAKVXNlIGEgcGlwZSB0byBjcmVhdGUgYSBuZXcgZGF0YSBmcmFtZSBjYWxsZWQgbXlfc3RhdGVzIHRoYXQgY29uc2lkZXJzIG9ubHkgc3RhdGVzIGluIHRoZSBOb3J0aGVhc3Qgb3IgV2VzdCB3aGljaCBoYXZlIGEgbXVyZGVyIHJhdGUgbG93ZXIgdGhhbiAxLCBhbmQgY29udGFpbnMgb25seSB0aGUgc3RhdGUsIHJhdGUgYW5kIHJhbmsgY29sdW1ucy4gVGhlIHBpcGUgc2hvdWxkIGFsc28gaGF2ZSBmb3VyIGNvbXBvbmVudHMgc2VwYXJhdGVkIGJ5IHRocmVlICU+JS4gCgpgYGB7cn0KbXlfc3RhdGVzIDwtIG11cmRlcnMgJT4lIG11dGF0ZShyYXRlPXRvdGFsL3BvcHVsYXRpb24qMTAwMDAsIHJhbmsgPSByYW5rKC1yYXRlKSkgJT4lIGZpbHRlcihyYXRlIDwgMSAmIHJlZ2lvbiAlaW4lIGMoIk5vcnRoZWFzdCIsICJXZXN0IikpICU+JSBzZWxlY3QgKHN0YXRlLCByYXRlLCByYW5rKQpteV9zdGF0ZXMKYGBg</div>
 
 
 
@@ -1810,7 +1960,7 @@ $(document).ready(function () {
 <!-- code folding -->
 <script>
 $(document).ready(function () {
-  window.initializeSourceEmbed("the_tidyverse_20190918_095_han.Rmd");
+  window.initializeSourceEmbed("the_tidyverse_20190918_095_han.nb.html");
   window.initializeCodeFolding("show" === "show");
 });
 </script>
