@@ -1,0 +1,453 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+# 5.7 Summarizing Data
+We cover two new dplyr verbs that make computations easier: `summarize` and `group_by`. We learn to access resulting values using the `pull` function.
+
+## 5.7.1 summarize
+The `summarize` function in dplyr provides a  way to compute summary statistics with intuitive and readable code.
+
+```{r}
+library(dplyr)
+library(dslabs)
+data(heights)
+```
+
+computing Average and Standard Deviation for females
+```{r}
+s <- heights %>% filter(sex == "Female") %>% summarize(average = mean(height), standard_deviation = sd(height))
+s
+```
+summarize는 데이터에 대한 테이블을 만들어준다. column의 이름만 정해주면 된다. 이는 D.F. 이기 때문에 다음과 같은 경로가 가능하다.
+
+```{r}
+s$average
+s$standard_deviation
+```
+
+이 함수는 dplyr 함수이므로 마찬가지로 column에 접근할 때 $로 지정해줄 필요가 없다.
+```{r}
+heights %>% 
+  filter(sex == "Female") %>%
+  summarize(median = median(height), minimum = min(height), maximum = max(height))
+```
+
+`quantile` 함수는 위의 세 값을 한번에 표현할 수 있게 해준다. 0은 min, 1은 max, 0.5 는 median이다. 그러나 summarize는 한번에 하나의 값만 출력하는 함수만 받을 수 있다.
+따라서 `summarize(range = quantile(height, c(0, 0.5, 1)))`는 불가능하다.
+
+```{r}
+data(murders)
+murders <- murders %>% mutate(rate = total/population*100000)
+summarise(murders, mean(rate))
+#rate의 평균이다. 미국의 전체 평균일 수 없다. 따라서
+us_murder_rate <- murders %>%
+  summarize(rate = sum(total) / sum(population) * 100000)
+us_murder_rate
+```
+
+## 5.7.2 pull
+```{r}
+class(us_murder_rate)
+```
+
+해당 데이터는 D.F.이다. 그러나 numeric value로만 값을 받아야하는 경우도 있다. pipe를 쓸 경우 pull을 이용해서 D.F.에서 numeric value를 "당겨내" 꺼낼 수 있다.
+```{r}
+us_murder_rate %>% pull(rate)
+```
+이는 us_murder_rate의 rate column의 값을 출력한다. `us_murder_rate$rate`와 동일하다.
+```{r}
+us_murder_rate <- murders %>% 
+  summarize(rate = sum(total) / sum(population) * 100000) %>%
+  pull(rate)
+us_murder_rate
+```
+summarize에 의해 D.F가 만들어지고, pipe와 pull에 의해 rate가 numeric value로 나온다.
+```{r}
+class(us_murder_rate)
+```
+
+## 5.7.3 Group then summarize with `group_by`
+
+data를 여러 그룹으로 나눠서 각각 분석을 해야 할 수도 있다. 이 경우 `group_by`를 사용할 수 있다.
+
+```{r}
+heights %>% group_by(sex)
+```
+
+겉으로는 다를게 없으나, 현재 이 데이터는 **Grouped data frame**이다. dplyr 함수는 이에 대해 본래 데이터와 다르게 반응한다. Conceptually, you can think of this table as many tables, with the same columns but not necessarily the same number of rows, stacked together in one object.
+
+```{r}
+heights %>% 
+  group_by(sex) %>%
+  summarize(average = mean(height), standard_deviation = sd(height))
+```
+`summarize`함수가 각 그룹에 따로 작용한다.
+
+```{r}
+murders %>% 
+  group_by(region) %>%
+  summarize(median_rate = median(rate))
+```
+
+# 5.8 Sorting Data Frames
+column의 값으로 정렬하는 방법으로는 `order`나 `sort` 함수가 있다. 그러나 전체 table에 대해서는 dplyr의 `arrange`가 좋다.
+
+```{r}
+murders %>%
+  arrange(population) %>%
+  head()
+```
+population에 따라 내림차순이 된다.
+
+```{r}
+murders %>% 
+  arrange(rate) %>% 
+  head()
+```
+동일.
+
+`desc` 함수를 이용하면 오름차순도 된다.
+```{r}
+murders %>% 
+  arrange(desc(rate)) %>% 
+  head()
+```
+
+## 5.8.1. Nested Sorting
+
+처음에 기준으로 잡은 column이 서로 비등비등하면, 그 다음 기준, 또 그 다음 기준... 해서 순서를 잡을 수 있다.
+
+```{r}
+murders %>% 
+  arrange(region, rate) %>% 
+  head()
+```
+
+## 5.8.2. The top n
+가장 위의 n개만 모아서 보려면 `top_n` 함수가 있다. 이 함수는 선별은 해주지만 정렬은 안해준다. 따라서 정렬은 arrange로 다시 해주자.
+```{r}
+murders %>% top_n(10, rate)
+# arrange로 정렬도 해주자.
+murders %>% top_n(10, rate) %>% arrange(rate)
+```
+
+# 5.9 Exercises
+For these exercises, we will be using the data from the survey collected by the United States National Center for Health Statistics (NCHS). This center has conducted a series of health and nutrition surveys since the 1960’s. Starting in 1999, about 5,000 individuals of all ages have been interviewed every year and they complete the health examination component of the survey. Part of the data is made available via the NHANES package. Once you install the NHANES package, you can load the data like this:
+```{r}
+install.packages("NHANES")
+library(NHANES)
+data(NHANES)
+```
+The NHANES data has many missing values. Remember that the main summarization function in R will return `NA` if any of the entries of the input vector is an `NA`. Here is an example:
+```{r}
+library(dslabs)
+data(na_example)
+mean(na_example)
+#> [1] NA
+sd(na_example)
+#> [1] NA
+```
+To ignore the NAs we can use the `na.rm` argument:
+```{r}
+mean(na_example, na.rm = TRUE)
+#> [1] 2.3
+sd(na_example, na.rm = TRUE)
+#> [1] 1.22
+```
+Let’s now explore the NHANES data.
+## 1.
+We will provide some basic facts about blood pressure. First let’s select a group to set the standard. We will use 20-29 year old females. `AgeDecade` is a categorical variable with these ages. Note that the category is coded like " 20-29“, with a space in front! What is the average and standard deviation of systolic blood pressure as saved in the BPSysAve variable? Save it to a variable called `ref`.
+Hint: Use filter and summarize and use the `na.rm = TRUE` argument when computing the average and standard deviation. You can also filter the NA values using `filter`.
+```{r}
+ref <- NHANES %>% filter(Gender == "female" & AgeDecade == " 20-29") %>% summarize(average = mean(BPSysAve, na.rm = TRUE), standard_deviation = sd(BPSysAve, na.rm = TRUE))
+ref
+```
+
+
+
+## 2.
+Using a pipe, assign the average to a numeric variable `ref_avg`. Hint: Use the code similar to above and then pull.
+```{r}
+ref_avg <- ref %>% pull(average)
+ref_avg
+```
+
+## 3.
+Now report the min and max values for the same group.
+```{r}
+NHANES %>% filter(Gender == "female" & AgeDecade == " 20-29") %>% summarize(min = min(BPSysAve, na.rm = TRUE), max = max(BPSysAve, na.rm = TRUE))
+```
+
+## 4.
+Compute the average and standard deviation for females, but for each age group separately rather than a selected decade as in question 1. Note that the age groups are defined by AgeDecade. Hint: rather than filtering by age and gender, filter by `Gender` and then use `group_by`.
+```{r}
+NHANES %>% filter(Gender == "female" & AgeDecade != " NA") %>% group_by(AgeDecade) %>% summarize(average = mean(BPSysAve, na.rm = TRUE), standard_deviation = sd(BPSysAve, na.rm = TRUE))
+```
+
+## 5.
+Repeat exercise 4 for males.
+```{r}
+NHANES %>% filter(Gender == "male" & AgeDecade != " NA") %>% group_by(AgeDecade) %>% summarize(average = mean(BPSysAve, na.rm = TRUE), standard_deviation = sd(BPSysAve, na.rm = TRUE))
+```
+
+
+## 6.
+We can actually combine both summaries for exercises 4 and 5 into one line of code. This is because group_by permits us to group by more than one variable. Obtain one big summary table using `group_by(AgeDecade, Gender)`.
+```{r}
+NHANES %>% filter(AgeDecade != " NA") %>% group_by(AgeDecade, Gender) %>% summarize(average = mean(BPSysAve, na.rm = TRUE), standard_deviation = sd(BPSysAve, na.rm = TRUE))
+```
+
+## 7.
+For males between the ages of 40-49, compare systolic blood pressure across race as reported in the Race1 variable. Order the resulting table from lowest to highest average systolic blood pressure.
+```{r}
+NHANES %>%
+  filter(Gender == 'male'& AgeDecade == ' 40-49' & Race1 != 'NA') %>%
+  group_by(Race1) %>%
+  summarize(average = mean(BPSysAve, na.rm = TRUE)) %>%
+  arrange(average)
+```
+
+# 5.10 Tibbles
+```{r}
+data("murders")
+class(murders)
+murders %>% group_by(region) %>% head()
+murders %>% group_by(region) %>% class()
+```
+
+tibble이라고 부르는 `tbl`은 D.F. 중 특수한 케이스이다. `group_by`와 `summarize`는 이와 같은 형태를 출력한다. **dplyr** 함수인 `select, filter, mutate, arrange`는 입력 받은 그대로의 형태로 출력하지만 **tidyverse**의 함수들은 tD.F.를 출력한다.
+
+## 5.10.1 Tibbles display better
+일단 tD.F.가 일반 D.F.보다 읽기 좋다.
+```{r}
+murders
+as_tibble(murders)
+```
+
+## 5.10.2 Subsets of tibbles are tibbles
+D.F.는 한 column만 추출했을 때 그것이 D.F.가 아니다. 그러나 tD.F.는 tD.F.를 출력한다.
+```{r}
+class(murders[,4])
+#> [1] "numeric"
+class(as_tibble(murders)[,4])
+#> [1] "tbl_df"     "tbl"        "data.frame"
+```
+
+D.F.를 먹어서 D.F. 뱉으므로 마찬가지로 D.F. 먹어서 D.F.를 뱉는 **tidyverse** 함수들에게 사용하기 좋다. D.F.가 아닌게 필요하면 Accessor $를 써야한다.
+```{r}
+class(as_tibble(murders)$population)
+#> [1] "numeric"
+```
+또한 존재하지 않는 Column을 넣으면 그대로 안먹고 경고를 출력한다.
+```{r}
+murders$Population
+#실수로 대문자를 넣은 케이스.
+#> NULL. 이거는 경고를 안해주고 그냥 먹은거다.
+as_tibble(murders)$Population
+#> Warning: Unknown or uninitialised column: 'Population'.
+#> NULL. 경고를 해준다.
+```
+
+## 5.10.3 Tibbles casn have complex entries
+
+D.F.이 column은 숫자, 문자 등의 값으로만 구성된 벡터만 받았다. 그러나 tD.F.는 함수의 목록과 같이 복잡한 것도 잘 받는다.
+```{r}
+tibble(id = c(1, 2, 3), func = c(mean, median, sd))
+```
+
+## 5.10.4 tibbles can be grouped
+`group_by`는 grouped tibble(얘는 뭐라고 축약하지... 갈수록 정신없네. 일단 gtD.F.)라고 하는 tibble을 출력한다. 이 D.F.는 각 row가 어떤 그룹에 속하는지 저장한다. `summarize`와 같은 **tidyverse**는 이 그룹 정보에 신경 쓴다.
+
+## 5.10.5 Create a tibble using `data_frame` instead of `data.frame`.
+D.F.를 직접 만들 때 tD.F.로 만들려면 `data_frame` 함수를 사용해야 한다.
+```{r}
+grades <- data_frame(names = c("John", "Juan", "Jean", "Yao"), 
+                     exam_1 = c(95, 80, 90, 85), 
+                     exam_2 = c(90, 85, 85, 90))
+grades
+```
+
+기본 함수 중 `data.frame`도 있는데, 이 함수는 보통 D.F.를 만들 때 쓰인다. 그리고 또 다른 차이는 `data.frame`은 문자열을 character 대신 factor로 받는다.
+```{r}
+grades <- data.frame(names = c("John", "Juan", "Jean", "Yao"),
+                     exam_1 = c(95, 80, 90, 85),
+                     exam_2 = c(90, 85, 85, 90))
+class(grades$names)
+#> [1] "factor"
+```
+
+이를 막으려면 `stringsAsFactors`를 써야한다.
+```{r}
+grades <- data.frame(names = c("John", "Juan", "Jean", "Yao"), 
+                     exam_1 = c(95, 80, 90, 85), 
+                     exam_2 = c(90, 85, 85, 90),
+                     stringsAsFactors = FALSE)
+class(grades$names)
+```
+
+일반 D.F.를 tD.F.로 만들려면 `as_tibble` 함수를 써야한다.
+```{r}
+as_tibble(grades) %>% class()
+```
+
+# 5.11 The dot operator
+앞에서 나온 `%>%는 새로운 오브젝트를 만들지 않고도 D.F.를 다룰 수 있게 해준다. 이는 각 함수가 첫 argument로 D.F.를 받기 때문이다. 그런데 만약 `pull`없이 데이터에 접근하고 싶다면 다른 방법이 필요하다. 그것이 **dot operator**이다.
+```{r}
+rates <-filter(murders, region == "South") %>% 
+  mutate(rate = total / population * 10^5) %>% 
+  .$rate
+median(rates)
+#> [1] 3.4
+```
+`.`가 pipe로 옮기고 있는 D.F.로 대체된다고 생각하면 쉬울 것 같다.
+
+# 5.12 `do`
+tidyverse는 매우 놀랍게도 gtD.F.를 해석할 수 있다! %>%를 통해 뱉은 D.F.를 바로 먹을 수 있다. 그러나 대부분의 R 함수는 이걸 못한다. `do` 함수가 tidyverse와 그 외 함수 사이를 연결해줄 수 있다. `do`는 tD.F.를 받아 D.F로 내놓기 때문이다.
+
+```{r}
+data(heights)
+heights %>% 
+  filter(sex == "Female") %>%
+  summarize(range = quantile(height, c(0, 0.5, 1)))
+```
+이건 안먹힌다.
+```{r}
+my_summary <- function(dat){
+  x <- quantile(dat$height, c(0, 0.5, 1))
+  data_frame(min = x[1], median = x[2], max = x[3])
+}
+heights %>% 
+  group_by(sex) %>% 
+  my_summary
+
+```
+나오긴 하는데 맞지는 한다. 각 성별에 대한 값이 각각 나오길 원한다. 이는 `my_summary`가 tidyverse가 아니라서 tD.F.를 모르기 때문이다. `do`로 연결해주자.
+
+```{r}
+heights %>% 
+  group_by(sex) %>% 
+  do(my_summary(.))
+```
+
+tD.F.는 `group_by` 이후 `do`로 넘어갔다. `do`를 통해 tD.F.의 이름은 `.`이 된다. 따라서 `.`을 찍어주어야한다.
+
+# 5.13 The purrr package
+4.5의 `sapply`는 벡터의 각 요소에 같은 함수를 처리하게 만들어준다.
+```{r}
+compute_s_n <- function(n){
+  x <- 1:n
+  sum(x)
+}
+n <- 1:25
+s_n <- sapply(n, compute_s_n)
+s_n
+```
+
+**purrr** package는 `sapply`와 비슷하지만 tidyverse에 작용할 수 있는 함수를 제공한다. 출력의 타입을 조절하기 더 좋다는 장점이 있다. 즉 우리가 원하는 타입으로만 출력을 만들 수 있다.
+
+`map`은 언제나 list를 출력한다.
+```{r}
+library(purrr)
+s_n <- map(n, compute_s_n)
+class(s_n)
+```
+
+`map_dbl`은 numeric value의 벡터로 출력한다.
+```{r}
+s_n <- map_dbl(n, compute_s_n)
+class(s_n)
+```
+
+purrr 함수 중 `map_df`는 tidyverse와 상호작용하기에 유용하다. 언제나 tD.F.를 출력하기 때문이다. 그렇지 못한 경우 `Argument 1 must have names error:`라는 오류를 출력한다.
+```{r}
+#s_n <- map_df(n, compute_s_n)
+#이건 안된다.
+
+compute_s_n <- function(n){
+  x <- 1:n
+  data_frame(sum = sum(x))
+}
+s_n <- map_df(n, compute_s_n)
+head(s_n)
+```
+
+# 5.14 Tidyverse Conditionals
+분석 과정에서 조건 연산이 필요할 것이다. 4.1의 `ifelse`가 예이다. 여기서는 **dplyr**의 조건 연산을 확인해보자.
+
+## 5.14.1 `case_when`
+
+`case_when`은 조건문을 벡터로 만들때 유용하다. `ifelse`와 동일하나 출력을 다양하게 만들 수 있다. 어떤 숫자나 문자, 값을 출력할 수 있다.
+```{r}
+x <- c(-2, -1, 0, 1, 2)
+case_when(x < 0 ~ "Negative", x > 0 ~ "Positive", TRUE ~ "Zero")
+#> [1] "Negative" "Negative" "Zero"     "Positive" "Positive"
+```
+True는 그 외의 것을 나타낼 때 쓴다.
+이 함수는 카테고리를 나눌 때 쓸 수 있다.
+```{r}
+data(murders)
+murders %>% 
+  mutate(group = case_when(
+    abb %in% c("ME", "NH", "VT", "MA", "RI", "CT") ~ "New England",
+    abb %in% c("WA", "OR", "CA") ~ "West Coast",
+    region == "South" ~ "South",
+    TRUE ~ "other")) %>%
+  group_by(group) %>%
+  summarize(rate = sum(total) / sum(population) * 10^5) %>%
+  arrange(rate)
+```
+
+## 5.14.2 `between`
+어떠한 값이 특정 구간 사이에 들어가는지 확인하는 함수이다. 아래 두 줄은 동일한 내용을 출력한다.
+```{r}
+x >= a & x <= b
+between(x, a, b)
+```
+
+# 5.15 Exercises
+## 1. Load the `murders` dataset. Which of the following is true?
+```{r}
+class(murders)
+murders
+```
+
+A. `murders` is in tidy format and is stored in a tibble.
+
+B. **`murders` is in tidy format and is stored in a data frame.**
+
+C. `murders` is not in tidy format and is stored in a tibble.
+
+D. `murders` is not in tidy format and is stored in a data frame.
+
+## Use `as_tibble` to covert the `murders` data table into a tibble and save it in an object called `murders_tibble`.
+```{r}
+murders_tibble <- as_tibble(murders)
+```
+
+## Use the `group_by` function to convert murders into a tibble that is grouped by region.
+```{r}
+murders_tibble %>%
+  group_by(region)
+```
+
+## Write tidyverse code that is equivalent to this code: `exp(mean(log(murders$population)))`. Write it using the pipe so that each function is called without arguments. Use the dot operator to access the population. Hint: The code should start with murders %>%.
+```{r}
+calc <- function(dat){
+  x <- exp(mean(log(dat$population)))
+  data_frame(x)
+}
+  murders %>%
+  do(calc(.))
+```
+
+
+##Use the `map_df` to create a data frame with three columns named `n`, `s_n`, and `s_n_2`. The first column should contain the numbers 1 through 100. The second and third columns should each contain the sum of 1 through n with n the row number.
+```{r}
+compute_s_n <- function(n){
+  x <- 1:n
+  data_frame(n = n, s_n = sum(x), s_n_2 = sum(x))
+}
+n <- 1:100
+map_df(n, compute_s_n)
+```
