@@ -1,0 +1,139 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Chapter 9 Visualizing Data Distributions
+말 그대로 Data의 분포를 시각화 하는 방법에 대한 것이다. 지금까지는 평균과 표준편차 만을 사용했으나, 더 많은 부분을 확인하기 위해서는 다른 방법이 필요하기 때문이다.
+
+## 9.1 Variable Types
+**Categorical variable**
+각각의 값이 몇개의 그룹 중 하나에서 나오는 경우이다. 성별, 지역이 예시이다.
+이중 그룹이 순서를 매길 수 있다면, 즉 1-9등급과 같은 체계라면 __ordinal data__라고 부른다.
+
+**Numeric variable**
+높이, 크기가 예시이다.
+키, 높이 처럼 연속적인 값은 __continous__하다고 하며, 갯수, 횟수처럼 불연속적이면 __discrete__하다고 한다.
+__discrete__ data는 ordianl data라고도 할 수 있다.
+
+## 9.2 Case Study : Describing Student Heights
+```{r}
+library(tidyverse)
+library(dslabs)
+data(heights)
+head(heights)
+```
+
+## 9.3 Distribution Function
+Categorical data에서 보여줄 수 있는 Distribution은 각 그룹의 비율이다.
+Numerical data는 좀 더 복잡하다.
+
+## 9.4 Cumulative distribution functions
+
+numerical 
+
+## 9.5 Histograms
+
+## 9.6 Smoothed density
+### 9.6.1 Interpreting the Y-axis
+### 9.6.2 Densities permit stratification
+
+## 9.7 Exercises
+
+## 9.8 The normal distribution
+
+## 9.9 Standard units
+
+## 9.10 Quantile-quantile plots
+
+## 9.11 Percentiles
+
+## 9.12 Boxplots
+
+## 9.13 Stratification
+
+## 9.14 Case Study : describing student heights
+
+## 9.15 Exercises
+
+## 9.16 ggplot2 geometries
+
+### 9.16.1 Barplots
+```{r}
+murders %>% ggplot(aes(region)) + geom_bar()
+```
+
+```{r}
+data(murders)
+tab <- murders %>% 
+  count(region) %>% 
+  mutate(proportion = n/sum(n))
+tab
+```
+
+```{r}
+tab %>% ggplot(aes(region, proportion)) + geom_bar(stat = "identity")
+```
+
+### 9.16.2 Histograms
+```{r}
+heights %>% 
+  filter(sex == "Female") %>% 
+  ggplot(aes(height)) +
+  geom_histogram(binwidth = 1, fill = "blue", col = "black") +
+  xlab("Male heights in inches") + 
+  ggtitle("Histogram")
+```
+
+### 9.16.3 Density plots
+
+```{r}
+heights %>% 
+  filter(sex == "Female") %>%
+  ggplot(aes(height)) +
+  geom_density()
+```
+
+
+### 9.16.4 Boxplots
+
+### 9.16.5 QQ-plots
+```{r}
+heights %>% filter(sex=="Male") %>%
+  ggplot(aes(sample = height)) +
+  geom_qq()
+```
+
+```{r}
+params <- heights %>% filter(sex=="Male") %>%
+  summarize(mean = mean(height), sd = sd(height))
+
+heights %>% filter(sex=="Male") %>%
+  ggplot(aes(sample = height)) +
+  geom_qq(dparams = params) +
+  geom_abline()
+```
+또 다른 방법
+```{r}
+heights %>% 
+  filter(sex=="Male") %>%
+  ggplot(aes(sample = scale(height))) + 
+  geom_qq() +
+  geom_abline()
+```
+
+
+### 9.16.6 Images
+```{r}
+x <- expand.grid(x = 1:12, y = 1:10) %>% 
+  mutate(z = 1:120) 
+x %>% ggplot(aes(x, y, fill = z)) + 
+  geom_raster()
+x %>% ggplot(aes(x, y, fill = z)) + 
+  geom_raster() + 
+  scale_fill_gradientn(colors =  terrain.colors(10))
+```
+
+### 9.16.7 Quick plots
+
+## 9.17 Exercises
