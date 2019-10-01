@@ -1,0 +1,435 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+# chapter 10. Data visualization
+  자, 이제 직접 해보자!
+  
+## 10.1 Case study : new insights on poverty
+아래의 두 질문에 답해보자. `gapminder` dataset을 이용할 것이다.
+> 1. Is it a fair characterization of today’s world to say it is divided into western rich nations and the developing world in Africa, Asia and Latin America?
+> 2. Has income inequality across countries worsened during the last 40 years?
+
+```{r}
+library(tidyverse)
+library(dslabs)
+data(gapminder)
+gapminder %>% as_tibble()
+```
+
+### 10.1.1 Hans Rosling's quiz
+아래 국가 중 유아 사망률이 높은 쪽은 어디일까?
+1. Sri Lanka or Turkey
+2. Poland or South Korea
+3. Malaysia or Russia
+4. Pakistan or Vietnam
+5. Thailand or South Africa
+
+```{r}
+gapminder %>%
+  filter(year == 2015 & country %in% c("Sri Lanka", "Turkey")) %>%
+  select(country, infant_mortality)
+```
+
+## 10.2 Scatterplots
+
+```{r}
+gapminder %>% filter(., year == 1962) %>%
+  ggplot(aes(fertility, life_expectancy)) +
+  geom_point()
+```
+대륙 별 분포를 확인하기 위해 색을 입히자.
+```{r}
+gapminder %>% filter(., year == 1962) %>%
+  ggplot(aes(fertility, life_expectancy, color = continent)) +
+  geom_point()
+```
+1962년과 2012년을 비교할 수 있을까?
+
+## 10.3 Faceting
+
+두 해의 데이터를 비교하려면 각 해의 plot을 나란히 놓는 것이 좋을 것이다. **faceting** 변수로 가능하다.
+`facet_grid` 함수는 두 plot을 자동으로 나눠준다.
+
+```{r}
+gapminder %>% filter(., year %in% c(1962, 2012)) %>%
+  ggplot(aes(fertility, life_expectancy, color = continent)) +
+  geom_point() +
+  facet_grid(continent~year) #row~column 순서이다.
+```
+
+facet_grid는 두 변수를 입력받아 각각 column과 row로 만든다. 만약 한 변수만 쓰려면 `.`으로 대체해주자.
+```{r}
+gapminder %>% filter(., year %in% c(1962, 2012)) %>%
+  ggplot(aes(fertility, life_expectancy, color = continent)) +
+  geom_point() +
+  facet_grid(.~year)
+```
+
+### 10.3.1 facet_wrap
+`facet_grid`는 동일한 row에 plot을 올린다 그럴 필요가 없는 경우 `facet_wrap`을 사용할 수 있다.
+```{r}
+years <- c(1962, 1980, 1990, 2000, 2012)
+continents <- c("Europe", "Asia")
+gapminder %>%
+  filter(year %in% years & continent %in% continents) %>%
+  ggplot(aes(fertility, life_expectancy, col = continent)) +
+  geom_point() +
+  facet_wrap(~year)
+```
+
+### 10.3.2 Fixed Scales for vetter comparisons
+plot을 따로 만들면 스케일이 제멋대로다. facet을 쓰는 것이 좋다.
+
+## 10.4 Time series plots
+50년 동안 얼마나 변화했는지를 확인해보자.
+
+```{r}
+gapminder %>% 
+  filter(country == "United States") %>% 
+  ggplot(aes(year, fertility)) +
+  geom_point()
+```
+
+선으로 그려보자.
+```{r}
+gapminder %>% 
+  filter(country == "United States") %>% 
+  ggplot(aes(year, fertility)) +
+  geom_line()
+```
+
+한국을 넣어보자.
+```{r}
+countries <- c("South Korea","Germany")
+gapminder %>% filter(country %in% countries) %>% 
+  ggplot(aes(year,fertility)) +
+  geom_line()
+```
+망했다!
+`group`으로 묶어줘야 한다.
+
+```{r}
+countries <- c("South Korea","Germany")
+
+gapminder %>% filter(country %in% countries & !is.na(fertility)) %>% #is.na()는 없는 값, 즉 NA를 가리킨다. 즉 !is.na()는 ()내에서 NA를 제외하는 것이다.
+  ggplot(aes(year, fertility, group = country)) +
+  geom_line()
+```
+색으로 국가를 표시하자.
+
+```{r}
+countries <- c("South Korea","Germany")
+
+gapminder %>% filter(country %in% countries & !is.na(fertility)) %>% 
+  ggplot(aes(year,fertility, col = country)) +
+  geom_line()
+```
+
+## 10.4.1 Labels instead of legends
+제곧내
+```{r}
+labels <- data.frame(country = countries, x = c(1975,1965), y = c(60,72)) #아까 countries를 독일과 남한으로 지정했었다.
+
+gapminder %>% 
+  filter(country %in% countries) %>% 
+  ggplot(aes(year, life_expectancy, col = country)) +
+  geom_line() +
+  geom_text(data = labels, aes(x, y, label = country), size = 7) +
+  theme(legend.position = "none")
+```
+
+## 10.5 Data Transformations
+gapminder는 GDP를 포함한다. GDP는 전체 국민의 1년에 해당한다. 1일, 1명으로 따져보자. 2달러 미만은 절대적 빈곤이라고 정의된다.
+```{r}
+gapminder <- gapminder %>% mutate(dollars_per_day = gdp/population/365)
+```
+
+## 10.5.1 Log Transformation
+70년대를 확인해보자.
+```{r}
+past_year <- 1970
+gapminder %>% 
+  filter(year == past_year & !is.na(gdp)) %>%
+  ggplot(aes(dollars_per_day)) + 
+  geom_histogram(binwidth = 1, color = "red")
+```
+
+1-2-4-8-16-32-64로 수익을 나눠보자. 이는 로그스케일로 확인할 수 있다.
+```{r}
+gapminder %>% 
+  filter(year == past_year & !is.na(gdp)) %>%
+  ggplot(aes(log2(dollars_per_day))) + 
+  geom_histogram(binwidth = 1, color = "blue")
+```
+
+### 10.5.2 Which Base?
+상용로그로 만들어보자. 우선 상용로그로 했을 경우의 범위를 확인해보자.
+```{r}
+filter(gapminder, year == past_year) %>% #1970년을 말하는거다.
+  summarize(min = min(population), max = max(population))
+```
+
+히토스그램을 만들어보자!
+```{r}
+gapminder %>% 
+  filter(year == past_year) %>%
+  ggplot(aes(log10(population))) +
+  geom_histogram(binwidth = 0.5, color = "black")
+```
+
+### 10.5.3 Transform the values or scale?
+스케일에 로그를 쓸 수도 있고 데이터에 로그를 쓸 수도 있다. 전자는 본래 데이터에 변형이 가해지지 않으므로 해석이 쉽다는 장점을 가진다.
+```{r}
+gapminder %>% 
+  filter(year == past_year & !is.na(gdp)) %>%
+  ggplot(aes(dollars_per_day)) + 
+  geom_histogram(binwidth = 1, color = "black") +
+  scale_x_continuous(trans = "log2", "reverse")
+```
+
+`trans` 대신 `sqrt`를 써서 근으로 만들 수도 있고, `logit`로 0과 1사이 값 중 하나로 만들 수도 있다. `reverse`는 방향을 반대로 만들어준다.
+
+## 10.6 Visualizing multimodal distributions
+mode는 히스토그램 등의 plot에서 나타나는 bump를 지칭한다. 정규분포에서 mode는 평균을 의미한다. 대부분의 plot에서는 bump 이후 값이 감소하지 않는다. 때문에 각각의 bump를 local modes라고 하고, multiple modes를 가진다고 한다. (극대값을 말하는 것 같다.)
+
+## 10.7 Comparing multiple distributions with boxplots and ridge plots
+
+```{r}
+p <- gapminder %>% 
+  filter(year == past_year & !is.na(gdp)) %>%
+  ggplot(aes(region, dollars_per_day)) 
+p + geom_point() 
+```
+X 축이 엉망이다.
+`coord_filp`이나 `theme`으로 조절 가능하다.
+```{r}
+p + geom_point() +
+  theme(axis.text.x = element_text(angle = 70, hjust =1))
+```
+
+`reorder`로 알파벳 순서로 정렬 가능하다.
+```{r}
+p <- gapminder %>% 
+  filter(year == past_year & !is.na(gdp)) %>%
+  mutate(region = reorder(region, dollars_per_day, FUN = median)) %>%
+  ggplot(aes(region, dollars_per_day)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+p
+```
+
+로그로 확인하자.
+```{r}
+p + scale_y_continuous(trans = "log2")
+```
+
+### 10.7.1 Boxplots
+```{r}
+gapminder <- gapminder %>% 
+  mutate(group = case_when(
+    region %in% c("Western Europe", "Northern Europe","Southern Europe", 
+                    "Northern America", "Australia and New Zealand") ~ "West",
+    region %in% c("Eastern Asia", "South-Eastern Asia") ~ "East Asia",
+    region %in% c("Caribbean", "Central America", "South America") ~ "Latin America",
+    continent == "Africa" & region != "Northern Africa" ~ "Sub-Saharan Africa",
+    TRUE ~ "Others"))
+
+gapminder <- gapminder %>% 
+  mutate(group = factor(group, 
+                        levels = c("Others", "Latin America", "East Asia", "Sub-Saharan Africa", "West")))
+
+p <- gapminder %>% 
+  filter(year == past_year & !is.na(gdp)) %>%
+  ggplot(aes(group, dollars_per_day)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(trans = "log2") +
+  xlab("")
+p 
+```
+```{r}
+p + geom_point(alpha = 1)
+p + geom_point(alpha = 0.3)
+```
+
+### 10.7.2 Ridge plots
+ridge plots는 ggridges라는 패키지가 필요하다.
+```{r}
+library(ggridges)
+p <- gapminder %>% 
+  filter(year == past_year & !is.na(dollars_per_day)) %>%
+  ggplot(aes(dollars_per_day, group)) + 
+  scale_x_continuous(trans = "log2") 
+p  + geom_density_ridges(scale = 3)
+```
+
+```{r}
+p + geom_density_ridges(jittered_points = TRUE)
+```
+
+rug representation을 확인해보자.
+```{r}
+p + geom_density_ridges(jittered_points = TRUE, 
+                        position = position_points_jitter(width = 0.05, height = 0),
+                        point_shape = '|', point_size = 3, point_alpha = 1, alpha = 0.7)
+```
+
+### 10.7.3 Example: 1970 versus 2010 income distributions
+```{r}
+past_year <- 1970
+present_year <- 2010
+gapminder %>% 
+  filter(year %in% c(past_year, present_year) & !is.na(gdp)) %>%
+  mutate(west = ifelse(group == "West", "West", "Developing")) %>%
+  ggplot(aes(dollars_per_day)) +
+  geom_histogram(binwidth = 1, color = "black") +
+  scale_x_continuous(trans = "log2") + 
+  facet_grid(year ~ west)
+```
+1970과 2010 사이에서 국가의 수가 달라졌다. 따라서 두 시기에 모두 존재한 국가만 걸러보자.
+**tidyverse**의 `intersect`함수로 할 수 있다.
+```{r}
+country_list_1 <- gapminder %>% 
+  filter(year == past_year & !is.na(dollars_per_day)) %>% 
+  pull(country)
+
+country_list_2 <- gapminder %>% 
+  filter(year == present_year & !is.na(dollars_per_day)) %>% 
+  pull(country)
+      
+country_list <- intersect(country_list_1, country_list_2)
+```
+이제 다시 만들어보자.
+```{r}
+past_year <- 1970
+present_year <- 2010
+gapminder %>% 
+  filter(country %in% country_list) %>%
+  filter(year %in% c(past_year, present_year) & !is.na(gdp)) %>%
+  mutate(west = ifelse(group == "West", "West", "Developing")) %>%
+  ggplot(aes(dollars_per_day)) +
+  geom_histogram(binwidth = 1, color = "black") +
+  scale_x_continuous(trans = "log2") + 
+  facet_grid(year ~ west)
+```
+
+그룹 별로 boxplot으로 확인해보자.
+```{r}
+gapminder %>% 
+  filter(year %in% c(past_year, present_year) & country %in% country_list) %>%
+  ggplot(aes(group, dollars_per_day)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(trans = "log2") +
+  xlab("") + # 이게 없으면 group 레이블이 보인다.
+  facet_grid(. ~ year)
+```
+이렇게 보면 비교가 어렵다. 한번에 색으로 보게 해보자.
+```{r}
+gapminder %>% 
+  filter(year %in% c(past_year, present_year) & country %in% country_list) %>%
+  mutate(year = factor(year)) %>% # 년도를 numeric이 아니라 factor로 인식하게 해야 이걸로 분리할 수 있다.
+  ggplot(aes(group, dollars_per_day, fill = year)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(trans = "log2") +
+  xlab("") 
+```
+
+Density plot으로 확인해보자.
+```{r}
+gapminder %>% 
+  filter(year %in% c(past_year, present_year) & country %in% country_list) %>%
+  ggplot(aes(dollars_per_day)) +
+  geom_density(fill = "grey") + 
+  scale_x_continuous(trans = "log2") + 
+  facet_grid(. ~ year)
+```
+
+일부 개발 도상국이 선진국이 되었다. 이 현상의 이유를 찾을 필요가 있겠다.
+```{r}
+gapminder %>% 
+  filter(year %in% c(past_year, present_year) & country %in% country_list) %>%
+  mutate(group = ifelse(group == "West", "West", "Developing")) %>%
+  ggplot(aes(dollars_per_day, fill = group)) +
+  scale_x_continuous(trans = "log2") +
+  geom_density(alpha = 0.2) + 
+  facet_grid(year ~ .)
+```
+
+두 국가 그룹 내의 국가 수가 같은 것 처럼 보인다. 실제로는 다르다. 이 부분을 조절해줄 필요가 있다.
+
+### 10.7.4 Accessing computed variables
+`geom_density` help file에서 `count`라는 변수를 찾을 수 있다.
+ggplot2에서 이 변수를 이용하려면 `..`이 필요하다.
+```{r}
+p <- gapminder %>% 
+  filter(year %in% c(past_year, present_year) & country %in% country_list) %>%
+  mutate(group = ifelse(group == "West", "West", "Developing")) %>%
+  ggplot(aes(dollars_per_day, y = ..count.., fill = group)) + # count는 data 내의 변수가 아니므로 dot가 필요한 것이다.
+  scale_x_continuous(trans = "log2", limit = c(0.125, 300))
+
+p + geom_density(alpha = 0.2) + 
+  facet_grid(year ~ .)
+```
+
+bandwidth를 조절할 수도 있다.
+```{r}
+p + geom_density(alpha = 0.2, bw = 0.1) + facet_grid(year ~ .)
+```
+
+ridge plot으로 보자.
+```{r}
+gapminder %>% 
+  filter(year %in% c(past_year, present_year) & !is.na(dollars_per_day)) %>%
+  ggplot(aes(dollars_per_day, group)) + 
+  scale_x_continuous(trans = "log2") + 
+  geom_density_ridges() +
+  facet_grid(. ~ year)
+```
+
+```{r}
+gapminder %>% 
+    filter(year %in% c(past_year, present_year) & country %in% country_list) %>%
+  group_by(year) %>%
+  mutate(weight = population/sum(population)*2) %>%
+  ungroup() %>%
+  ggplot(aes(dollars_per_day, fill = group)) +
+  scale_x_continuous(trans = "log2", limit = c(0.125, 300)) + 
+  geom_density(alpha = 0.2, bw = 0.75, position = "stack") + 
+  facet_grid(year ~ .)
+```
+
+### 10.7.5 Weighted densities
+
+
+## 10.8 The ecological fallacy and importance of showing the data
+```{r}
+gapminder <- gapminder %>% 
+  mutate(group = case_when(
+    region %in% c("Western Europe", "Northern Europe","Southern Europe", 
+                    "Northern America", "Australia and New Zealand") ~ "West",
+    region %in% "Northern Africa" ~ "Northern Africa",
+    region %in% c("Eastern Asia", "South-Eastern Asia") ~ "East Asia",
+    region == "Southern Asia"~ "Southern Asia",
+    region %in% c("Central America", "South America", "Caribbean") ~ "Latin America",
+    continent == "Africa" & region != "Northern Africa" ~ "Sub-Saharan Africa",
+    region %in% c("Melanesia", "Micronesia", "Polynesia") ~ "Pacific Islands"))
+```
+
+```{r}
+surv_income <- gapminder %>% 
+  filter(year %in% present_year & !is.na(gdp) & 
+           !is.na(infant_mortality) & !is.na(group)) %>%
+  group_by(group) %>%
+  summarize(income = sum(gdp)/sum(population)/365,
+            infant_survival_rate = 
+              1 - sum(infant_mortality/1000*population)/sum(population)) 
+
+surv_income %>% arrange(income)
+```
+
+생태오류(ecological fallacy, ecological inference fallacy)란 조사연구에서 자료수집 및 해석의 과정에서 집단에 대한 관찰만으로 개인에 대한 결론을 이끌어내는 잘못을 말한다. 다시 말해 분석단위를 잘못 설정한 것이다. 이 경우에도 국가별로 큰 그룹을 만들어 그 그룹의 유아 생존률을 확인했다. 이는 각 국가에 대한 결론을 이끌어내지 못한다.
+
+
