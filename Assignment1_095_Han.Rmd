@@ -241,4 +241,3 @@ Plot이 완성되었다! 이제 plot을 출력한다.
 ggsave('plot.BrainSpan_Expression_pattern_in_Neurogenesis.pdf', p, width = 16, height = 9)
 ```
 
-
