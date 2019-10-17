@@ -1,0 +1,244 @@
+---
+title: "Expression pattern of genes requlating the onset, progression, and termination of neurogenesis"
+output: html_notebook
+---
+## 배경
+이번 Brain span dataset을 이용하여 확인하고자 하는 것은 neurodevelopment 과정에서 나타나는 발현 양상의 변화이다. 특히 neurogenesis 단계에 집중하여 이 단계를 개시하고, 진행하며 종료하는 key factor들의 발현 양상을 집중적으로 살펴보고자 한다.      
+Neural tube에서 cortex가 형성될 때 우선 분화되는 세포는 Neuroepithelial progenitor cell이다. 이 cell은 종방향으로 길게 뻗어 cortex의 Expansion된다. 이후 이 cell은 radial gila로 분화되는데, 이 세포에서 분열해 나온 세포들은 neuron으로 분화한다. 이 단계가 Neurogenesis 단계이다. 이후 radial glia는 astrogenesis 단계에 돌입하는데, 여때 radial glia에서 분열해 나온 세포는 astrocyte가 된다. 이 과정은 모두 하나의 세포에서 진행된다. Expasion, Neuron, Astrocyte가 모두 하나의 세포를 기원으로 하고 있다. 이는 한 세포의 Expression 양상이 바뀌면서 그 성격이 달라지기 때문이다. 따라서 Expression pattern의 변화를 확인할 수 있을 것이다.     
+이 분석의 Reference는 Ben Martynoga, Daniela Drechsel, Francois Guillemot의 "Molecular Control of Neurogenesis: A View from the Mammalian Cerebral Cortex" 라는 리뷰 논문이다.    
+
+![Figure1](https://www.ncbi.nlm.nih.gov/corecgi/tileshop/tileshop.fcgi?p=PMC3&id=216049&s=33&r=1&c=1)
+
+이 논문을 바탕으로 확인할 유전자는 다음과 같다.    
+Onset : PAX6   NEUROG2 (Ngn2)   ASCL1      
+Progression : MYCN (Myc)    
+Termination : JAK2   STAT3   NFIA (NF1A)      
+
+## 데이터셋 확인
+우선 데이터를 로드해주자.   
+```{r}
+load('data_brainspan_DFC.20190928.Rdata')
+# install.packages("ggsci") #한번만 install하고 삭제.
+library("ggsci")
+library("tidyverse")
+#write.csv(s, file="s.csv",row.names=TRUE)
+```
+데이터셋에 존재하는 세 data frame을 각각 임시 data frame으로 옮긴다.   
+```{r}
+colnames(e)
+exp <- e
+colnames(g)
+gen <- g
+colnames(s)
+sam <- s
+```
+   
+해야할 것은 다음과 같다.   
+1. age를 week로 정렬한다.   
+2. development stage를 추가한다.   
+3. 세 Data Frame을 통합한다.     
+       
+#### 1. age를 모두 week로 정렬한다.   
+sam의 age를 둘로 나눈 column을 만든다. age_num과 age_char로.      
+
+```{r}
+sam <- mutate(sam, age_num = gsub("[a-z, ]","", age))
+sam <- mutate(sam, age_char = gsub("[0-9, ]","", age))
+sam <- mutate(sam, age_week = age_num)
+sam$age_week <- as.numeric(sam$age_week)
+```
+
+이후 달과 해로 나온 부분을 week로 바꿔준다. mos * 4, yrs * 52.17       
+수정 이후 몇주가 흐른 것인지를 확인해야하므로, 임신기간 38주를 더해준다.      
+
+```{r}
+for(i in 1 : 35){
+ if(sam$age_char[i] == "mos")
+  sam$age_week[i] <- sam$age_week[i] * 4 +38
+ if(sam$age_char[i] == "yrs")
+  sam$age_week[i] <- sam$age_week[i] * 52 + 38
+}
+select(sam, age, age_num, age_char, age_week)
+```
+
+#### 2. stage를 추가해준다.   
+4-7 1  
+8-9 2A   
+10-12 2B   
+13-15 3A   
+16-18 3B   
+19-24 4   
+25-38 5   
+39-58 6   
+59-110 7   
+111-298 8   
+299-610 9   
+611-1026 10   
+1027- 11   
+
+```{r}
+sam <- mutate(sam, stage = 1)
+for(i in 1 : 35){
+ if(sam$age_week[i] <= 7)
+  sam$stage[i] <- "1"
+ if(sam$age_week[i] >= 8 && sam$age_week[i] <= 9)
+  sam$stage[i] <- "2A"
+ if(sam$age_week[i] >= 10 && sam$age_week[i] <= 12)
+  sam$stage[i] <- "2B"
+ if(sam$age_week[i] >= 13 && sam$age_week[i] <= 15)
+  sam$stage[i] <- "3A"
+ if(sam$age_week[i] >= 16 && sam$age_week[i] <= 18)
+  sam$stage[i] <- "3B"
+ if(sam$age_week[i] >= 19 && sam$age_week[i] <= 24)
+  sam$stage[i] <- "4"
+ if(sam$age_week[i] >= 25 && sam$age_week[i] <= 38)
+  sam$stage[i] <- "5"
+ if(sam$age_week[i] >= 39 && sam$age_week[i] <= 58)
+  sam$stage[i] <- "6"
+ if(sam$age_week[i] >= 59 && sam$age_week[i] <= 110)
+  sam$stage[i] <- "7"
+ if(sam$age_week[i] >= 111 && sam$age_week[i] <= 298)
+  sam$stage[i] <- "8"
+ if(sam$age_week[i] >= 299 && sam$age_week[i] <= 610)
+  sam$stage[i] <- "9"
+ if(sam$age_week[i] >= 611 && sam$age_week[i] <= 1026)
+  sam$stage[i] <- "10"
+ if(sam$age_week[i] >= 1027)
+  sam$stage[i] <- "11"
+}
+```
+
+
+#### 3. 세 D.F를 통합한다.
+우선 exp에 gene 이름을 gen의 symbol로 추가한다.
+
+```{r}
+exp <- exp %>% mutate(gene_symbol = gen$ensembl_gene_id)
+exp2 <- exp[, c(36, 1:35)]
+```
+
+Column을 gneder time(week) gene1 gene2... 순으로 만들어주어야 한다. 지금은 Column에 sample들이 위차한다.   
+우선 row와 column을 뒤집어줄 필요가 있다.   
+```{r}
+exp3 <- data.frame(t(exp2[-1]))
+colnames(exp3) <- exp2[, 1]
+```
+
+week와 gender를 포함하는 total data frame을 만든다.   
+보기 좋게 하려면 gender, week, stage를 먼저 보이게 한다.
+```{r}
+tot <- exp3
+tot <- tot %>% mutate(age_week = sam$age_week) %>% mutate(gender = sam$gender) %>% mutate(stage = sam$stage)
+tot <- tot[, c(52377, 52379, 52378, 1:52376)]
+```
+
+통합데이터가 완성되었다. 이제 골라내서 확인만하면 된다.
+
+## Plotting
+각 gene의 ENSEMBL code는 다음과 같다.   
+PAX6 ENSG00000007372      
+NEUROG2 ENSG00000178403       
+ASCL1 ENSG00000139352            
+MYCN ENSG00000134323          
+JAK2 ENSG00000096968      
+STAT3 ENSG00000168610      
+NFIA ENSG00000162599    
+공식적인 gene의 이름은 좌측과 같지만, plot에서는 논문에서 사용했던 이름을 사용한다. 특히 Jak2와 Stat3는 논문에서 Jak/stat로 나온다. 이는 Jak/Stat pathway에 Jak, Stat gene family가 다수 관여하기 때문인데, Neurodevelopment에 직접적으로 관여하는 것으로 관찰된 것은 Jak2와 Stat3이다.    
+이들의 발현량과 나이, stage만 포함하는 Data Frame인 Data of interest, DOI를 만들자.     
+```{r}
+doi <- tot %>% select(ENSG00000007372, ENSG00000178403, ENSG00000139352, ENSG00000134323, ENSG00000096968, ENSG00000168610, ENSG00000162599, age_week, stage)
+```
+
+38주 동안의 발현을 확인해보자.   
+onset level부터 확인한다.
+```{r}
+p <- doi %>% filter(age_week <= 55) %>%
+  ggplot(aes(x = age_week, y = value, color = variable)) +
+  geom_point(aes(y = ENSG00000007372, col = "Pax6"), size = 0.3) +
+  stat_smooth(aes(y = ENSG00000007372, col = "Pax6", linetype = "Onset"), size=0.7, method = "loess", level = 0.9, fullrange = TRUE, se = FALSE, span = 2/3, na.rm = TRUE) + 
+  geom_point(aes(y = ENSG00000178403, col = "Ngn2"), size = 0.3) +
+  stat_smooth(aes(y = ENSG00000178403, col = "Ngn2", linetype = "Onset"), size=0.7, method = "loess", level = 0.9, fullrange = TRUE, se = FALSE, span = 2/3, na.rm = TRUE) +
+  geom_point(aes(y = ENSG00000139352, col = "Ascl1"), size = 0.3) +
+  stat_smooth(aes(y = ENSG00000139352, col = "Ascl1", linetype = "Onset"), size=0.7, method = "loess", level = 0.9, fullrange = TRUE, se = FALSE, span = 2/3, na.rm = TRUE) +
+    geom_point(aes(y = ENSG00000134323, col = "Myc"), size = 0.3) +
+  stat_smooth(aes(y = ENSG00000134323, col = "Myc", linetype = "Progression"), size=0.9, method = "loess", level = 0.9, fullrange = TRUE, se = FALSE, span = 2/3, na.rm = TRUE) +
+    geom_point(aes(y = ENSG00000096968, col = "Jak"), size = 0.3) +
+  stat_smooth(aes(y = ENSG00000096968, col = "Jak", linetype = "Termination"), size=0.7, method = "loess", level = 0.9, fullrange = TRUE, se = FALSE, span = 2/3, na.rm = TRUE) +
+    geom_point(aes(y = ENSG00000168610, col = "Stat"), size = 0.3) +
+  stat_smooth(aes(y = ENSG00000168610, col = "Stat", linetype = "Termination"), size=0.7, method = "loess", level = 0.9, fullrange = TRUE, se = FALSE, span = 2/3, na.rm = TRUE) +
+    geom_point(aes(y = ENSG00000162599, col = "Nf1a"), size = 0.3) +
+  stat_smooth(aes(y = ENSG00000162599, col = "Nf1a", linetype = "Termination"), size=0.7, method = "loess", level = 0.9, fullrange = TRUE, se = FALSE, span = 2/3, na.rm = TRUE)
+p
+```
+
+stage를 표시하는 점선을 그려주자.    
+```{r}
+p <- p + 
+  #geom_vline(xintercept = 7.5, color = "grey1", linetype="dashed", size = 0.2) +
+  geom_vline(xintercept = 9.5, color = "grey1", linetype="dashed", size = 0.2) +
+  geom_vline(xintercept = 12.5, color = "grey1", linetype="dashed", size = 0.2) +
+  geom_vline(xintercept = 15.5, color = "grey1", linetype="dashed", size = 0.2) +
+  geom_vline(xintercept = 18.5, color = "grey1", linetype="dashed", size = 0.2) +
+  geom_vline(xintercept = 24.5, color = "grey1", linetype="dashed", size = 0.2) +
+  geom_vline(xintercept = 39, color = "grey1", linetype="dashed", size = 0.2)
+p
+```
+
+각 stage를 표시한다.
+```{r}
+p <- p +
+  # annotate("text", x = 6.7, y = 110, label = "S1", size = 3, color = "gray10" ) +
+  annotate("text", x = 8.5, y = 110, label = "S2A", size = 3, color = "gray10" ) +
+  annotate("text", x = 11, y = 110, label = "S2B", size = 3, color = "gray10" ) +
+  annotate("text", x = 14, y = 110, label = "S3A", size = 3, color = "gray10" ) +
+  annotate("text", x = 17, y = 110, label = "S3B", size = 3, color = "gray10" ) +
+  annotate("text", x = 21.5, y = 110, label = "S4", size = 3, color = "gray10" ) +
+  annotate("text", x = 31.75, y = 110, label = "S5", size = 3, color = "gray10" ) +
+  annotate("text", x = 39, y = 110, label = "Birth", size = 4, color = "Black" )
+
+p
+```
+
+```{r}
+p <- p + 
+  scale_color_jco(name = "Genes", breaks=c("Pax6","Ngn2","Ascl1","Myc","Jak","Stat","Nf1a")) +
+  scale_linetype_manual(name = "Phase", values = c("solid", "longdash", "dotted")) +
+  xlab("Age(Weeks after conception)") +
+  ylab("RPKM") +
+  ggtitle("Expression pattern of key factors regulating the \nonset, progression, and termination of neurogenesis")+
+  theme(panel.background = element_blank(),
+        panel.grid.major.y = element_line(size = 0.4, linetype = "solid",color = "gray90"),
+        panel.grid.major.x = element_blank(),
+        plot.title = element_text(color = "Black", size = 15),
+        legend.key.width = unit(1.2, "cm"),
+        legend.title = element_text(color = "gray10", size = 12),
+        axis.line = element_line(size = 0.5, linetype = "solid", color = "black"),
+        axis.text = element_text(color = "gray10", size = 10),
+        axis.title = element_text(color = "gray10", size = 12))
+p
+```
+
+y축이 너무 높다. 조금 낮추고 주석도 옮긴다.
+
+```{r}
+p <- p +
+  # annotate("text", x = 6.7, y = 77, label = "S1", size = 3, color = "gray10" ) +
+  annotate("text", x = 8.5, y = 77, label = "S2A", size = 3, color = "gray10" ) +
+  annotate("text", x = 11, y = 77, label = "S2B", size = 3, color = "gray10" ) +
+  annotate("text", x = 14, y = 77, label = "S3A", size = 3, color = "gray10" ) +
+  annotate("text", x = 17, y = 77, label = "S3B", size = 3, color = "gray10" ) +
+  annotate("text", x = 21.5, y = 77, label = "S4", size = 3, color = "gray10" ) +
+  annotate("text", x = 31.75, y = 77, label = "S5", size = 3, color = "gray10" ) +
+  annotate("text", x = 39, y = 77, label = "Birth", size = 4, color = "Black" ) +
+  coord_cartesian(xlim = c(8, 40), ylim = c(0, 80))
+
+p
+```
+
+Plot이 완성되었다! 이제 plot을 출력한다.
+
+```{r}
+ggsave('plot.BrainSpan_Expression_pattern_in_Neurogenesis.pdf', p, width = 16, height = 9)
+```
+
+
