@@ -13,7 +13,7 @@ A more tangible way to think about the probability of an event is as the proport
 $Pr(A)$ : the probability of event $A$ happening.   
 event : things that can happen when something occurs by chance.   
 
-#### 13.1.3 Probability distributions
+#### 13.1.3 Probability distributions  
 In cases that can be thought of as beads in an urn, for each bead type, their proportion defines the distribution.    
 
 ### 13.2 Monte Carlo Simulations for categorical data
