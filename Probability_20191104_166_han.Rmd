@@ -11,7 +11,7 @@ A more tangible way to think about the probability of an event is as the proport
 
 #### 13.1.2 Notation    
 $Pr(A)$ : the probability of event $A$ happening.   
-event : things that can happen when something occurs by chance.   
+event : things that can happen when something occurs by chance.    
 
 #### 13.1.3 Probability distributions  
 In cases that can be thought of as beads in an urn, for each bead type, their proportion defines the distribution.    
