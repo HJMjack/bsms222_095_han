@@ -28,3 +28,12 @@ https://htmlpreview.github.io/?https://github.com/HJMjack/bsms222_095_han/blob/m
 
 ### Chapter11
 
+### Chapter12 Introduction to statistics with R
+
+### Chapter13 Probability
+
+### Chapter14 Random variables
+
+### Chapter15 Statistical inference
+
+### Chapter16 Statistical models
