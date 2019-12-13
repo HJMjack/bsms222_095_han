@@ -9,7 +9,7 @@ We start by covering some basic principles related to categorical data. The subs
 ####13.1.1 Relative frequency   
 A more tangible way to think about the probability of an event is as the proportion of times the event occurs when we repeat the experiment an infinite number of times, independently, and under the same conditions. 
 
-#### 13.1.2 Notation    
+#### 13.1.2 Notation     
 $Pr(A)$ : the probability of event $A$ happening.   
 event : things that can happen when something occurs by chance.    
 
