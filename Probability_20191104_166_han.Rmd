@@ -1,0 +1,484 @@
+---
+title: "Chapter 13. Probability"
+output: html_notebook
+---
+
+### 13.1 Discrete probability   
+We start by covering some basic principles related to categorical data. The subset of probability is referred to as discrete probability.   
+
+####13.1.1 Relative frequency   
+A more tangible way to think about the probability of an event is as the proportion of times the event occurs when we repeat the experiment an infinite number of times, independently, and under the same conditions.
+
+#### 13.1.2 Notation
+$Pr(A)$ : the probability of event $A$ happening.   
+event : things that can happen when something occurs by chance.   
+
+#### 13.1.3 Probability distributions
+In cases that can be thought of as beads in an urn, for each bead type, their proportion defines the distribution.    
+
+### 13.2 Monte Carlo Simulations for categorical data
+Computers provide a way to actually perform the simple random experiment described above: pick a bead at random from a bag that contains three blue beads and two red ones.   
+We demonstrate its use in the code below. First, we use the function `rep` to generate the urn and then use sample to pick a bead at random:
+```{r}
+beads <- rep(c("red", "blue"), times = c(2,3))
+beads
+sample(beads, 1)
+```
+
+Monte carlo simulation이란 충분히 큰 수로 이러한 시행을 진행하는 것이다. 이를 위해 'replicate'를 사용할 수 있다. 'prop.table()'은 table의 각 값을 비율로 다시 계산해준다.
+
+```{r}
+B <- 7000
+events <- replicate(B, sample(beads, 1))
+tab <- table(events)
+tab
+prop.table(tab)
+```
+events는 character로, replicate의 n만큼 반복하여 나온 결과가 나열되어 있다.   tab은 table로 파란색과 빨간색이 총 몇개 있는지 보여준다.   
+
+#### 13.2.1 Setting the random seed
+```{r}
+set.seed(1986)
+```
+
+#### 13.2.2 With and without replacement
+'sample'은 바구니에서 꺼냈다가 돌려놓는 디폴트로 설정되어 있지 않다. 따라서 공이 5개인데 꺼낼게 그보다 크면 에러가 난다. 따라서 'replace=TRUE'로 설정해주어야 한다. 또한 하나씩만 꺼낸다고하면 replicate와 동일하게 쓸 수 있다.
+```{r}
+events <- sample(beads, B, replace = TRUE)
+prop.table(table(events))
+```
+
+### 13.3 Independence
+앞 뒤 사건이 서로 영향을 주고 받지 않을 때 Independent 하다고 한다.
+
+### 13.4 Conditional probabilities
+첫번째 카드가 K일때 두번째 카드는 K일 확률   
+probability that a second dealt card is a King given that the first was a King 은 다음과 같이 표현한다.   
+$Pr(Card 2 is a King | Card 1 is a King) = 3/51$   
+|는 given that, conditional on   라고 표현할 수 있다. 선행한 사건이 뒤에 간다.   
+### 13.5 Addition and multiplication rules
+#### 13.5.1 Multiplication rule
+$$
+Pr(A\, and\, B) = Pr(A)Pr(B|A)
+$$
+$$
+Pr(A\, and\, B\, and\, C) = Pr(A)Pr(B|A)Pr(C|A\, and\, B)
+$$
+
+
+#### 13.5.2 Multiplication rule under independence
+A, B가 independent하면 다음과 같다.
+$$
+Pr(A\, and\, B\, and\, C) = Pr(A)Pr(B)Pr(C)
+$$
+다음과 같이 일반화된다.   
+$$
+Pr(B\, |\, A) = \frac{Pr(A\, and\, B)}{Pr(A)}
+$$
+
+#### 13.5.3 Addition rule
+$$
+Pr(A\, or\, B) = Pr(A)+Pr(B)-Pr(A\, and\, B)
+$$
+
+### 13.6 Combinations and permutations
+'expand.grid'는 두 벡터를 조합해주고 'paste'는 둘을 합쳐준다.
+```{r}
+suits <- c("Diamonds", "Clubs", "Hearts", "Spades")
+numbers <- c("Ace", "Deuce", "Three", "Four", "Five", "Six", "Seven", 
+             "Eight", "Nine", "Ten", "Jack", "Queen", "King")
+deck <- expand.grid(number=numbers, suit=suits)
+deck <- paste(deck$number, deck$suit)
+kings <- paste("King", suits)
+mean(deck %in% kings)
+```
+'gtool'의 'permutation' 함수는 n개의 리스트에서 r개를 골라 조합해준다.
+```{r}
+library(gtools)
+permutations(3, 2)
+```
+
+숫자 10개 중 7개를 선택할 수도 있다. v로 벡터를 지정해줄 수 있다.
+```{r}
+all_phone_numbers <- permutations(10, 7, v = 0:9)
+n <- nrow(all_phone_numbers)
+index <- sample(n, 5)
+all_phone_numbers[index,]
+```
+
+```{r}
+hands <- permutations(52, 2, v = deck)
+first_card <- hands[,1]
+second_card <- hands[,2]
+kings <- paste("King", suits)
+sum(first_card %in% kings)
+```
+Conditional probability를 계산해보자.
+```{r}
+sum(first_card%in%kings & second_card%in%kings) / sum(first_card%in%kings)
+```
+
+순서를 고려하지 않으려면 'combinations'를 이용할 수 있다. (n, r)에서 n개 중 r개를 순서 없이 선택한다.
+```{r}
+combinations(3,2)
+```
+
+```{r}
+aces <- paste("Ace", suits)
+
+facecard <- c("King", "Queen", "Jack", "Ten")
+facecard <- expand.grid(number = facecard, suit = suits)
+facecard <- paste(facecard$number, facecard$suit)
+
+hands <- combinations(52, 2, v = deck)
+mean(hands[,1] %in% aces & hands[,2] %in% facecard)
+```
+순서가 있다 생각해도 동일하게 나온다.
+```{r}
+mean((hands[,1] %in% aces & hands[,2] %in% facecard) |
+       (hands[,2] %in% aces & hands[,1] %in% facecard))
+```
+
+#### 13.6.1 Monte Carlo example
+```{r}
+hand <- sample(deck, 2)
+hand
+dim(hands)
+```
+hands에는 두 카드에 대한 모든 조합이 들어있다.
+```{r}
+blackjack <- function(){
+   hand <- sample(deck, 2)
+  (hand[1] %in% aces & hand[2] %in% facecard) | 
+    (hand[2] %in% aces & hand[1] %in% facecard)
+}
+B <- 10000
+results <- replicate(B, blackjack())
+mean(results)
+```
+
+### 13.7 Examples
+#### 13.7.1 Monty Hall problem
+```{r}
+B <- 10000
+monty_hall <- function(strategy){
+  doors <- as.character(1:3)
+  prize <- sample(c("car", "goat", "goat"))
+  prize_door <- doors[prize == "car"]
+  my_pick <- sample(doors, 1)
+  show <- sample(doors[!doors %in% c(my_pick, prize_door)],1)
+  
+  stick <- my_pick
+  stick == prize_door
+  
+  switch <- doors[!doors%in%c(my_pick, show)]
+  choice <- ifelse(strategy == "stick", stick, switch)
+  choice == prize_door
+}
+stick <- replicate(B, monty_hall("stick"))
+mean(stick)
+switch <- replicate(B, monty_hall("switch"))
+mean(switch)
+```
+
+#### 13.7.1 Birthday problem
+`duplicated`는 같은 요소가 두번 이상 나왔을 때마다 TRUE를 출력한다.
+```{r}
+n <- 50
+B <- 10000
+same_birthday <- function(n){
+  bdays <- sample(1:365, n, replace=TRUE)
+  any(duplicated(bdays))
+}
+results <- replicate(B, same_birthday(50))
+mean(results)
+```
+
+```{r}
+#library(tidyverse)
+compute_prob <- function(n, B=10000){
+  results <- replicate(B, same_birthday(n))
+  mean(results)
+}
+n <- seq(1,60)
+prob <- sapply(n, compute_prob)
+qplot(n, prob)
+```
+다르게 계산할 수도 있다.
+```{r}
+exact_prob <- function(n){
+  prob_unique <- seq(365,365-n+1)/365 
+  1 - prod( prob_unique)
+}
+eprob <- sapply(n, exact_prob)
+qplot(n, prob) + geom_line(aes(n, eprob), col = "red")
+```
+
+### 13.8 Infinity in practice
+Monte Carlo experiment에서는 $B = 10000$ 과 같이 충분히 큰 수로 예상을 정확하게 만든다. 그러나 얼마나 큰 수여야 적당할까? 25명 대상의 생일 문제이다.
+```{r}
+B <- 10^seq(1, 5, len = 100)
+compute_prob <- function(B, n=25){
+  same_day <- replicate(B, same_birthday(n))
+  mean(same_day)
+}
+prob <- sapply(B, compute_prob)
+qplot(log10(B), prob, geom = "line")
+```
+1000 언저리부터 결과가 안정적이다.
+
+### 13.9 Exercises
+
+1. One ball will be drawn at random from a box containing: 3 cyan balls, 5 magenta balls, and 7 yellow balls. What is the probability that the ball will be cyan?   
+**1/5**
+   
+2. What is the probability that the ball will not be cyan?   
+**4/5**
+   
+3. Instead of taking just one draw, consider taking two draws. You take the second draw without returning the first draw to the box. We call this sampling without replacement. What is the probability that the first draw is cyan and that the second draw is not cyan?   
+**3/15 x 12/14 = 6/35**
+   
+4. Now repeat the experiment, but this time, after taking the first draw and recording the color, return it to the box and shake the box. We call this sampling with replacement. What is the probability that the first draw is cyan and that the second draw is not cyan?
+**Answer : 3/15 × 12/15 = 4/25**
+   
+5. Two events A and B are independent if Pr(A and B)=Pr(A)P(B). Under which situation are the draws independent?
+   
+You don’t replace the draw.   
+**You replace the draw.**   
+Neither   
+Both   
+   
+6. Say you’ve drawn 5 balls from the box, with replacement, and all have been yellow. What is the probability that the next one is yellow?   
+**Don't know.**
+   
+7. If you roll a 6-sided die six times, what is the probability of not seeing a 6?   
+$(1 - 1/6)^6 = (5/6)^6$   
+   
+8. Two teams, say the Celtics and the Cavs, are playing a seven game series. The Cavs are a better team and have a 60% chance of winning each game. What is the probability that the Celtics win at least one game?
+$1 - (3/5)^4$   
+   
+9. Create a Monte Carlo simulation to confirm your answer to the previous problem. Use B <- 10000 simulations. Hint: use the following code to generate the results of the first four games:
+```{r}
+celtic_wins <- sample(c(0,1), 4, replace = TRUE, prob = c(0.6, 0.4))
+```
+The Celtics must win one of these 4 games.   
+```{r}
+B <- 10000
+f <- replicate(B, {
+  g <- sample(c(0,1), 4, replace = TRUE, prob = c(0.6, 0.4))
+  any(g==1)
+})
+mean(f)
+```
+
+10. Two teams, say the Cavs and the Warriors, are playing a seven game championship series. The first to win four games, therefore, wins the series. The teams are equally good so they each have a 50-50 chance of winning each game. If the Cavs lose the first game, what is the probability that they win the series?   
+```{r}
+n <-6
+l <- list(0:1)
+p <- expand.grid(rep(l, n))
+cavs_win_series <- rowSums(p)>=4
+mean(cavs_win_series)
+```
+
+11. Confirm the results of the previous question with a Monte Carlo simulation.   
+```{r}
+B <- 10000
+cavs_win_series <- replicate(B, {
+  cavs_wins <- sample(c(0,1), 6, replace = TRUE)
+  sum(cavs_wins)>=4
+})
+mean(cavs_win_series)
+```
+
+12. Two teams, A and B, are playing a seven game series. Team A is better than team B and has a p > 0.5 chance of winning each game. Given a value p, the probability of winning the series for the underdog team B can be computed with the following function based on a Monte Carlo simulation:
+```{r}
+prob_win <- function(p){
+  B <- 10000
+  result <- replicate(B, {
+    b_win <- sample(c(1,0), 7, replace = TRUE, prob = c(1-p, p))
+    sum(b_win)>=4
+  })
+  mean(result)
+}
+```
+
+Use the function sapply to compute the probability, call it Pr, of winning for p <- seq(0.5, 0.95, 0.025). Then plot the result.    
+```{r}
+p <- seq(0.5, 0.95, 0.025)
+Pr <- sapply(p, prob_win)
+qplot(p, Pr)
+```
+
+13. Repeat the exercise above, but now keep the probability fixed at p <- 0.75 and compute the probability for different series lengths: best of 1 game, 3 games, 5 games,… Specifically, N <- seq(1, 25, 2). Hint: use this function:
+```{r}
+prob_win <- function(N, p=0.75){
+  B <- 10000
+  result <- replicate(B, {
+    b_win <- sample(c(1,0), N, replace = TRUE, prob = c(1-p, p))
+    sum(b_win)>=(N+1)/2
+  })
+  mean(result)
+}
+N <- seq(1, 25, 2)
+Pr <- sapply(N, prob_win)
+qplot(N, Pr)
+```
+
+### 13.10 Continuous probability
+키와 같은 데이터에서는 나올 수 있는 수에 대한 비율로 분포를 만드는 것은 의미가 없다. numeric data를 define하는 방법으로는 cumulative distribution function이 있다.   
+```{r}
+library(tidyverse)
+library(dslabs)
+data(heights)
+x <- heights %>% filter(sex=="Male") %>% pull(height)
+```
+
+Empirical distribution function은 다음과 같이 정의한다.
+```{r}
+F <- function(a) mean(x<=a)
+```
+
+70.5인치보다 큰 사람의 비율은
+```{r}
+1 - F(70)
+```
+CDF가 정의되면 이를 바탕으로 모든 값에 대해 가능성을 계산할 수 있다.
+```{r}
+F(70) - F(65)
+```
+
+### 13.11 Theoretical continous distributions
+'pnorm' 함수로 cumulative distribution을 normal distribution으로 만들 수 있다.
+```{r}
+F(a) = pnorm(a, m, s)
+```
+
+```{r}
+m <- mean(x)
+s <- sd(x)
+1 - pnorm(70.5, m, s)
+```
+
+#### 13.11.1 Theoretical distribution as approximations
+In cases like height, in which the data is rounded, the normal approximation is particularly useful if we deal with intervals that include exactly one round number. For example, the normal distribution is useful for approximating the proportion of students reporting values in intervals like the following three:   
+```{r}
+mean(x <= 68.5) - mean(x <= 67.5)
+mean(x <= 69.5) - mean(x <= 68.5)
+mean(x <= 70.5) - mean(x <= 69.5)
+
+pnorm(68.5, m, s) - pnorm(67.5, m, s) 
+pnorm(69.5, m, s) - pnorm(68.5, m, s)
+pnorm(70.5, m, s) - pnorm(69.5, m, s) 
+```
+이렇게는 잘 나오는데 구간을 잘못 설정하면 완전히 달라진다.
+```{r}
+mean(x <= 70.9) - mean(x<=70.1)
+pnorm(70.9, m, s) - pnorm(70.1, m, s)
+```
+이는 discretization라는 상황이다. 대부분 정수로 키를 기입했기 때문에 발생한 문제이다. 이런 것을 잘 처리해야한다.
+
+#### 13.11.2 The probability density
+categorical distribution에 대해서는 각 카테고리에 대한 확률을 다음과 같이 정의할 수 있다.
+$$
+Pr(X=4) = 1/6
+$$
+CDF는 이렇게 정의된다.
+$$
+F(4) = Pr(X\leq4)=Pr(X = 4) + Pr(X = 3) + Pr(X = 2) + Pr(X = 1)
+$$
+Continous distribution에서는 다음과 같다.
+$$
+F(a) = Pr(X\leq a) = \int^{a}_{-\infty}f(x)dx
+$$
+'pnorm'의 경우 해당 값보다 작은 값들의 확률을 출력한다. 즉 그래프의 좌측 영역이다.
+'dnorm'의 경우 해당 값의 정규분포의 높이를 출력한다.
+'qnorm'은 높이를 입력하면 해당 높이를 보이는 값을 출력한다.
+
+### 13.12 Monte Carlo simulations for continous variables   
+'rnorm'은 세 값을 받아 normally distributed outcomes을 생성할 수 있게 해준다. 데이터의 크기, 평균, 표준편차를 받는다.
+```{r}
+n <- length(x)
+m <- mean(x)
+s <- sd(x)
+simulated_heights <- rnorm(n, m, s)
+simulated_heights %>% qplot()
+```
+이는 Monte Carlo simulations을 할 때 쓸 수 있다.
+```{r}
+B <- 10000
+tallest <- replicate(B, {
+  simulated_data <- rnorm(800, m, s)
+  max(simulated_data)
+})
+mean(tallest >= 7*12)
+```
+
+### 13.13 Continous distributions
+```{r}
+x <- seq(-4, 4, length.out = 100)
+qplot(x, f, geom = "line", data = data.frame(x, f = dnorm(x)))
+```
+
+For the student-t, described later in Section 16.10, the shorthand t is used so the functions are dt for the density, qt for the quantiles, pt for the cumulative distribution function, and rt for Monte Carlo simulation.   
+
+### 13.14 Exercises
+1. Assume the distribution of female heights is approximated by a normal distribution with a mean of 64 inches and a standard deviation of 3 inches. If we pick a female at random, what is the probability that she is 5 feet or shorter?
+```{r}
+pnorm(5*12, 64, 3)
+```
+
+2. Assume the distribution of female heights is approximated by a normal distribution with a mean of 64 inches and a standard deviation of 3 inches. If we pick a female at random, what is the probability that she is 6 feet or taller?
+```{r}
+1 - pnorm(6*12, 64, 3)
+```
+
+3. Assume the distribution of female heights is approximated by a normal distribution with a mean of 64 inches and a standard deviation of 3 inches. If we pick a female at random, what is the probability that she is between 61 and 67 inches?
+```{r}
+pnorm(67, 64, 3) - pnorm(61, 64, 3)
+```
+
+4. Repeat the exercise above, but convert everything to centimeters. That is, multiply every height, including the standard deviation, by 2.54. What is the answer now?
+```{r}
+pnorm(67*2.54, 64*2.54, 3*2.54) - pnorm(61*2.54, 64*2.54, 3*2.54)
+```
+
+5. Notice that the answer to the question does not change when you change units. This makes sense since the answer to the question should not be affected by what units we use. In fact, if you look closely, you notice that 61 and 64 are both 1 SD away from the average. Compute the probability that a randomly picked, normally distributed random variable is within 1 SD from the average.
+```{r}
+pnorm(64 + 3, 64, 3) - pnorm(64 - 3, 64, 3)
+```
+
+6. To see the math that explains why the answers to questions 3, 4, and 5 are the same, suppose we have a random variable with average $m$ and standard error $s$. Suppose we ask the probability of $X$ being smaller or equal to $a$. Remember that, by definition, $a$ is $(a - m)/s$ standard deviations $s$ away from the average $m$. The probability is:
+$$
+Pr(X \leq a)
+$$
+Now we subtract $\mu$ to both sides and then divide both sides by $\sigma$:
+$$
+Pr(\frac{X-m}{s} \leq \frac{a-m}{s})
+$$
+
+The quantity on the left is a standard normal random variable. It has an average of 0 and a standard error of 1. We will call it $Z$:
+$$
+Pr(Z \leq \frac{a-m}{s})
+$$
+
+So, no matter the units, the probability of $X \leq a$ is the same as the probability of a standard normal variable being less than $(a-m)/s$. If `mu` is the average and `sigma` the standard error, which of the following R code would give us the right answer in every situation:
+
+a. `mean(X<=a)`
+**b. `pnorm((a - m)/s)`**
+c. `pnorm((a - m)/s , m, s)`
+d. `pnorm(a)`
+
+7. Imagine the distribution of male adults is approximately normal with an expected value of 69 and a standard deviation of 3. How tall is the male in the 99th percentile? Hint: use `qnorm`.
+```{r}
+qnorm(0.99, 69, 3)
+```
+
+8. The distribution of IQ scores is approximately normally distributed. The average is 100 and the standard deviation is 15. Suppose you want to know the distribution of the highest IQ across all graduating classes if 10,000 people are born each in your school district. Run a Monte Carlo simulation with `B=1000` generating 10,000 IQ scores and keeping the highest. Make a histogram.
+```{r}
+B <- 1000
+iq <- replicate(B, {
+  simulation <- rnorm(10000,100,15)
+  max(simulation)
+})
+hist(iq)
+```
