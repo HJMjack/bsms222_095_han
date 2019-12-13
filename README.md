@@ -31,6 +31,7 @@ https://htmlpreview.github.io/?https://github.com/HJMjack/bsms222_095_han/blob/m
 ### Chapter12 Introduction to statistics with R
 
 ### Chapter13 Probability
+https://htmlpreview.github.io/?https://github.com/HJMjack/bsms222_095_han/blob/master/Probability_20191104_166_han.nb.html
 
 ### Chapter14 Random variables
 
